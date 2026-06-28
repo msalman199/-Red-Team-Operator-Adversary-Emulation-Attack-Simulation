@@ -1,0 +1,39 @@
+THREAT INTELLIGENCE REPORT: APT-FINANCE-2024
+
+Executive Summary:
+APT-FINANCE-2024 targets financial institutions using sophisticated techniques.
+
+Attack Chain:
+1. Initial Access: Spear phishing emails with malicious attachments
+2. Execution: PowerShell scripts and macro-enabled documents
+3. Persistence: Registry run keys and scheduled tasks
+4. Credential Access: Mimikatz for credential dumping from LSASS
+5. Lateral Movement: PSExec and WMI for network propagation
+6. Command and Control: HTTPS beaconing to external servers
+7. Exfiltration: Data theft via encrypted channels
+
+Infrastructure:
+C2 Servers:
+- 203.0.113.45
+- 198.51.100.78
+- malicious-c2.example.com
+- backup-server.attacker.net
+
+File Hashes:
+MD5: d41d8cd98f00b204e9800998ecf8427e
+SHA1: da39a3ee5e6b4b0d3255bfef95601890afd80709
+SHA256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+
+Phishing Infrastructure:
+- phishing@fake-bank.com
+- security-alert@malicious-domain.net
+- https://fake-login.badsite.org/portal
+- https://malware-payload.example.com/update.exe
+
+Techniques Observed:
+- Spear phishing attachments
+- Credential dumping via mimikatz
+- Lateral movement using PSExec
+- Registry key persistence mechanisms
+- Command and control over HTTPS
+- Data exfiltration to external servers
