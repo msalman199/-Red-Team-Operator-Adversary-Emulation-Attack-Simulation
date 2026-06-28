@@ -1,0 +1,30 @@
+{
+  "name": "APT29 (Cozy Bear)",
+  "attribution": "Russian Foreign Intelligence Service (SVR)",
+  "first_seen": "2008",
+  "description": "APT29 is a sophisticated threat actor targeting government organizations, diplomatic entities, and technology companies. They employ advanced techniques including supply chain compromises, zero-day exploits, and living-off-the-land techniques.",
+  "motivations": ["espionage", "intelligence_gathering"],
+  "target_sectors": ["government", "diplomatic", "technology"],
+  "sophistication": "advanced",
+  "techniques": [
+    "T1566.001",
+    "T1195.002",
+    "T1059.001",
+    "T1047",
+    "T1053.005",
+    "T1112",
+    "T1055",
+    "T1027",
+    "T1003.001",
+    "T1083",
+    "T1021.001",
+    "T1114.002",
+    "T1071.001",
+    "T1041"
+  ],
+  "malware_families": ["CozyDuke", "SeaDuke", "CloudDuke", "PowerDuke"],
+  "infrastructure": {
+    "c2_methods": ["https", "domain_fronting", "dns_tunneling"],
+    "hosting": ["compromised_legitimate_sites", "bulletproof_hosting"]
+  }
+}
