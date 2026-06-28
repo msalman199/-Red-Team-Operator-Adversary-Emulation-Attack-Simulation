@@ -1,0 +1,454 @@
+Build Attacker Profile and Select Campaign Objectives
+Lab Objectives
+By the end of this lab, students will be able to:
+
+Build comprehensive threat actor profiles using MITRE ATT&CK framework
+Analyze threat intelligence reports to extract TTPs (Tactics, Techniques, and Procedures)
+Define strategic campaign objectives based on threat actor analysis
+Create structured documentation for red team operations
+Automate profile analysis using Python scripting
+Prerequisites
+Basic understanding of cybersecurity concepts
+Familiarity with Linux command line
+Basic knowledge of MITRE ATT&CK framework
+Python programming fundamentals
+Understanding of threat intelligence concepts
+Lab Environment
+Al Nafi provides pre-configured Linux-based cloud machines. Click Start Lab to access your environment.
+
+Included tools:
+
+Ubuntu 22.04 LTS
+Python 3.10+
+Git, text editors (nano, vim)
+Web browser
+Pre-installed dependencies
+Task 1: Set Up TRAM and Create Threat Reports
+Step 1.1: Install TRAM
+# Clone TRAM repository
+cd ~
+git clone https://github.com/center-for-threat-informed-defense/tram.git
+cd tram
+
+# Install dependencies
+pip3 install -r requirements.txt
+
+# Initialize database
+python3 manage.py migrate
+python3 manage.py createsuperuser
+
+# Start TRAM service
+python3 manage.py runserver 0.0.0.0:8000 &
+Step 1.2: Create Threat Intelligence Report
+# Create directory structure
+mkdir -p ~/threat_reports
+cd ~/threat_reports
+
+# Create APT29 threat report
+nano apt29_report.txt
+Add the following content:
+
+THREAT INTELLIGENCE REPORT: APT29 (Cozy Bear)
+
+Executive Summary:
+APT29 is a sophisticated Russian state-sponsored threat actor targeting government, 
+diplomatic, and technology organizations since 2008.
+
+Attack Techniques Observed:
+
+Initial Access:
+- Spear-phishing with malicious attachments
+- Supply chain compromises
+- Exploitation of public-facing applications
+
+Execution:
+- PowerShell script execution
+- WMI for remote execution
+- Scheduled task creation
+
+Persistence:
+- Registry modification
+- Windows service creation
+- Bootkit installation
+
+Privilege Escalation:
+- CVE exploitation (CVE-2020-0688, CVE-2019-19781)
+- Token impersonation
+- UAC bypass
+
+Defense Evasion:
+- Process injection (DLL injection)
+- Obfuscated PowerShell
+- Timestomping
+- Process masquerading
+
+Credential Access:
+- Mimikatz credential dumping
+- LSASS memory dumping
+- Kerberoasting attacks
+
+Discovery:
+- Network service scanning
+- Active Directory enumeration
+- WMI queries for system information
+
+Lateral Movement:
+- RDP usage
+- Windows Admin Shares
+- Pass-the-hash attacks
+
+Collection:
+- Exchange server email collection
+- Network share file discovery
+- Screen capture
+
+Command and Control:
+- HTTPS communication
+- Domain fronting
+- DNS tunneling
+
+Exfiltration:
+- Data compression and encryption
+- DNS-based exfiltration
+- Cloud storage services
+
+Tools: CozyDuke, SeaDuke, CloudDuke, PowerDuke, WellMess
+Step 1.3: Use TRAM for ATT&CK Mapping
+Open browser: firefox http://localhost:8000
+Login with superuser credentials
+Click New Report
+Enter report details:
+Name: "APT29 Profile Analysis"
+Description: "Comprehensive APT29 TTP analysis"
+Paste threat report content
+Click Analyze Report
+Review and validate ATT&CK technique mappings
+Export results as JSON to ~/attacker_profiles/apt29_profile.json
+Task 2: Create Profile Analysis Script
+Step 2.1: Build Profile Analyzer Template
+cd ~
+nano profile_analyzer.py
+Create the following starter template:
+
+#!/usr/bin/env python3
+"""
+Attacker Profile Analyzer
+Students: Complete the TODO sections to implement full functionality
+"""
+
+import json
+import yaml
+import datetime
+from collections import defaultdict
+import argparse
+
+class AttackerProfileAnalyzer:
+    def __init__(self):
+        self.attack_framework = self.load_attack_framework()
+    
+    def load_attack_framework(self):
+        """Load simplified ATT&CK framework structure"""
+        framework = {
+            "tactics": {
+                "TA0001": {"name": "Initial Access"},
+                "TA0002": {"name": "Execution"},
+                "TA0003": {"name": "Persistence"},
+                "TA0004": {"name": "Privilege Escalation"},
+                "TA0005": {"name": "Defense Evasion"},
+                "TA0006": {"name": "Credential Access"},
+                "TA0007": {"name": "Discovery"},
+                "TA0008": {"name": "Lateral Movement"},
+                "TA0009": {"name": "Collection"},
+                "TA0011": {"name": "Command and Control"},
+                "TA0010": {"name": "Exfiltration"},
+                "TA0040": {"name": "Impact"}
+            }
+        }
+        return framework
+    
+    def analyze_profile(self, profile_data):
+        """
+        Analyze attacker profile and extract key characteristics
+        
+        Args:
+            profile_data: Dictionary containing threat actor profile
+        
+        Returns:
+            Dictionary with analysis results
+        """
+        # TODO: Extract threat actor name
+        # TODO: Assess sophistication level
+        # TODO: Extract primary motivations
+        # TODO: Identify target sectors
+        # TODO: Analyze attack patterns
+        # TODO: Return comprehensive analysis dictionary
+        pass
+    
+    def assess_sophistication(self, profile_data):
+        """
+        Assess threat actor sophistication level
+        
+        Args:
+            profile_data: Profile dictionary
+        
+        Returns:
+            String: "Advanced Persistent Threat (APT)", "Intermediate", or "Basic"
+        """
+        # TODO: Count advanced technique indicators
+        # TODO: Analyze technique complexity
+        # TODO: Return sophistication assessment
+        pass
+    
+    def extract_motivations(self, profile_data):
+        """
+        Extract primary motivations from profile
+        
+        Args:
+            profile_data: Profile dictionary
+        
+        Returns:
+            List of motivation strings
+        """
+        motivation_keywords = {
+            "financial": ["money", "financial", "bank", "cryptocurrency"],
+            "espionage": ["intelligence", "espionage", "government", "state-sponsored"],
+            "disruption": ["disruption", "destruction", "sabotage"],
+            "hacktivism": ["activist", "political", "ideology"]
+        }
+        
+        # TODO: Search description for motivation keywords
+        # TODO: Return list of identified motivations
+        pass
+    
+    def generate_campaign_objectives(self, analysis):
+        """
+        Generate campaign objectives based on profile analysis
+        
+        Args:
+            analysis: Analysis dictionary from analyze_profile()
+        
+        Returns:
+            List of campaign objective strings
+        """
+        objectives = []
+        
+        # TODO: Generate objectives based on motivations
+        # TODO: Add sector-specific objectives
+        # TODO: Include sophistication-based objectives
+        # TODO: Return unique objectives list
+        pass
+    
+    def create_campaign_plan(self, analysis, objectives):
+        """
+        Create comprehensive campaign plan
+        
+        Args:
+            analysis: Profile analysis dictionary
+            objectives: List of campaign objectives
+        
+        Returns:
+            Dictionary containing complete campaign plan
+        """
+        plan = {
+            "campaign_metadata": {
+                "name": f"Red Team Campaign - {analysis.get('threat_actor', 'Unknown')} Emulation",
+                "created_date": datetime.datetime.now().isoformat(),
+                # TODO: Add additional metadata fields
+            },
+            "threat_profile": analysis,
+            "campaign_objectives": objectives,
+            # TODO: Add attack phases
+            # TODO: Add success criteria
+            # TODO: Add risk assessment
+        }
+        
+        return plan
+    
+    def generate_attack_phases(self, analysis):
+        """
+        Generate attack phases based on profile
+        
+        Args:
+            analysis: Profile analysis dictionary
+        
+        Returns:
+            List of attack phase dictionaries
+        """
+        # TODO: Define standard attack phases
+        # TODO: Customize based on threat actor capabilities
+        # TODO: Include technique IDs for each phase
+        # TODO: Return phases list
+        pass
+
+def main():
+    parser = argparse.ArgumentParser(description="Analyze attacker profiles")
+    parser.add_argument("--profile", required=True, help="Path to profile JSON")
+    parser.add_argument("--output", required=True, help="Output file path")
+    parser.add_argument("--format", choices=["json", "yaml"], default="yaml")
+    
+    args = parser.parse_args()
+    
+    # TODO: Initialize analyzer
+    # TODO: Load profile data from file
+    # TODO: Perform analysis
+    # TODO: Generate objectives
+    # TODO: Create campaign plan
+    # TODO: Save output in specified format
+    # TODO: Print summary information
+
+if __name__ == "__main__":
+    main()
+chmod +x profile_analyzer.py
+Step 2.2: Create Sample Profile Data
+mkdir -p ~/attacker_profiles
+nano ~/attacker_profiles/apt29_profile.json
+Add sample profile structure:
+
+{
+  "name": "APT29 (Cozy Bear)",
+  "attribution": "Russian Foreign Intelligence Service (SVR)",
+  "first_seen": "2008",
+  "description": "APT29 is a sophisticated threat actor targeting government organizations, diplomatic entities, and technology companies. They employ advanced techniques including supply chain compromises, zero-day exploits, and living-off-the-land techniques.",
+  "motivations": ["espionage", "intelligence_gathering"],
+  "target_sectors": ["government", "diplomatic", "technology"],
+  "sophistication": "advanced",
+  "techniques": [
+    "T1566.001",
+    "T1195.002",
+    "T1059.001",
+    "T1047",
+    "T1053.005",
+    "T1112",
+    "T1055",
+    "T1027",
+    "T1003.001",
+    "T1083",
+    "T1021.001",
+    "T1114.002",
+    "T1071.001",
+    "T1041"
+  ],
+  "malware_families": ["CozyDuke", "SeaDuke", "CloudDuke", "PowerDuke"],
+  "infrastructure": {
+    "c2_methods": ["https", "domain_fronting", "dns_tunneling"],
+    "hosting": ["compromised_legitimate_sites", "bulletproof_hosting"]
+  }
+}
+Task 3: Implement Analysis Functions
+Step 3.1: Complete Sophistication Assessment
+Implement the assess_sophistication() function:
+
+Count advanced technique indicators in description
+Keywords: "supply chain", "zero-day", "kernel", "bootkit", "domain fronting"
+Count total techniques used
+Return "Advanced Persistent Threat (APT)" if ≥4 advanced indicators OR >15 techniques
+Return "Intermediate" if ≥2 advanced indicators OR >8 techniques
+Otherwise return "Basic"
+Step 3.2: Complete Motivation Extraction
+Implement the extract_motivations() function:
+
+Search profile description for motivation keywords
+Use the provided motivation_keywords dictionary
+Return list of all matching motivations
+Return ["unknown"] if no matches found
+Step 3.3: Complete Objective Generation
+Implement the generate_campaign_objectives() function:
+
+Create objectives based on identified motivations:
+Financial: Test transaction security, payment systems, cryptocurrency wallets
+Espionage: Test data classification, DLP capabilities, insider threat detection
+Disruption: Test business continuity, recovery capabilities, backup processes
+Add sector-specific objectives for target sectors
+Include sophistication-based objectives for APT-level actors
+Remove duplicates before returning
+Step 3.4: Complete Attack Phase Generation
+Implement the generate_attack_phases() function:
+
+Create phases with this structure:
+
+{
+    "phase": "Phase Name",
+    "description": "Phase description",
+    "duration": "Estimated time",
+    "techniques": ["T1234", "T5678"]
+}
+Required phases:
+
+Reconnaissance
+Initial Access
+Execution & Persistence
+Privilege Escalation
+Defense Evasion
+Credential Access
+Discovery
+Lateral Movement
+Collection
+Exfiltration
+Impact (if disruption motivation present)
+Task 4: Test and Generate Campaign Plans
+Step 4.1: Run Profile Analysis
+# Test your implementation
+python3 profile_analyzer.py \
+    --profile ~/attacker_profiles/apt29_profile.json \
+    --output ~/campaign_plans/apt29_campaign.yaml \
+    --format yaml
+Step 4.2: Review Generated Campaign Plan
+# View the generated campaign plan
+cat ~/campaign_plans/apt29_campaign.yaml
+Expected output structure:
+
+Campaign metadata (name, date, threat actor)
+Threat profile analysis
+Campaign objectives list
+Attack phases with techniques
+Success criteria
+Risk assessment
+Step 4.3: Create Additional Profile
+Challenge: Create a profile for Lazarus Group with these characteristics:
+
+Motivations: financial, espionage, disruption
+Target sectors: financial, cryptocurrency, entertainment
+Sophistication: advanced
+Notable techniques: T1566.001, T1189, T1195.002, T1553.002
+Generate campaign plan and compare with APT29.
+
+Expected Outcomes
+Upon completion, students should have:
+
+Functional TRAM installation for ATT&CK mapping
+Threat intelligence reports mapped to ATT&CK techniques
+Working profile analyzer script with implemented functions
+Generated campaign plans in YAML/JSON format
+Understanding of threat actor profiling methodology
+Ability to translate threat intelligence into actionable red team objectives
+Troubleshooting Tips
+TRAM won't start:
+
+Check if port 8000 is already in use: netstat -tuln | grep 8000
+Kill existing process: pkill -f runserver
+Verify Python dependencies: pip3 list | grep -i django
+Script execution errors:
+
+Verify file permissions: chmod +x profile_analyzer.py
+Check Python version: python3 --version (requires 3.8+)
+Validate JSON syntax: python3 -m json.tool apt29_profile.json
+Missing analysis results:
+
+Ensure all TODO sections are implemented
+Check that profile JSON contains required fields
+Verify function return statements are not pass
+Conclusion
+This lab introduced threat actor profiling using the MITRE ATT&CK framework and TRAM tool. Students learned to analyze threat intelligence reports, extract TTPs, and generate structured campaign objectives for red team operations. The profile analyzer script automates the translation of threat intelligence into actionable red team plans, providing a foundation for adversary emulation exercises.
+
+Key takeaways:
+
+Threat actor profiles guide red team campaign planning
+MITRE ATT&CK provides standardized TTP taxonomy
+Automation improves consistency in campaign planning
+Understanding adversary motivations shapes realistic objectives
+Next steps:
+
+Expand profile database with additional threat actors
+Integrate with red team automation frameworks
+Develop custom ATT&CK technique mappings
+Create organization-specific threat profiles
