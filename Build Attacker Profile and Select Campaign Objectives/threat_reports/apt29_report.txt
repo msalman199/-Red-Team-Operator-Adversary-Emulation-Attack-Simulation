@@ -1,0 +1,65 @@
+THREAT INTELLIGENCE REPORT: APT29 (Cozy Bear)
+
+Executive Summary:
+APT29 is a sophisticated Russian state-sponsored threat actor targeting government, 
+diplomatic, and technology organizations since 2008.
+
+Attack Techniques Observed:
+
+Initial Access:
+- Spear-phishing with malicious attachments
+- Supply chain compromises
+- Exploitation of public-facing applications
+
+Execution:
+- PowerShell script execution
+- WMI for remote execution
+- Scheduled task creation
+
+Persistence:
+- Registry modification
+- Windows service creation
+- Bootkit installation
+
+Privilege Escalation:
+- CVE exploitation (CVE-2020-0688, CVE-2019-19781)
+- Token impersonation
+- UAC bypass
+
+Defense Evasion:
+- Process injection (DLL injection)
+- Obfuscated PowerShell
+- Timestomping
+- Process masquerading
+
+Credential Access:
+- Mimikatz credential dumping
+- LSASS memory dumping
+- Kerberoasting attacks
+
+Discovery:
+- Network service scanning
+- Active Directory enumeration
+- WMI queries for system information
+
+Lateral Movement:
+- RDP usage
+- Windows Admin Shares
+- Pass-the-hash attacks
+
+Collection:
+- Exchange server email collection
+- Network share file discovery
+- Screen capture
+
+Command and Control:
+- HTTPS communication
+- Domain fronting
+- DNS tunneling
+
+Exfiltration:
+- Data compression and encryption
+- DNS-based exfiltration
+- Cloud storage services
+
+Tools: CozyDuke, SeaDuke, CloudDuke, PowerDuke, WellMess
