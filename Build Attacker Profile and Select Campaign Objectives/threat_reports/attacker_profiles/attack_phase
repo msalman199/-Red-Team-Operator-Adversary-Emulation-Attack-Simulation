@@ -1,0 +1,6 @@
+{
+    "phase": "Phase Name",
+    "description": "Phase description",
+    "duration": "Estimated time",
+    "techniques": ["T1234", "T5678"]
+}
