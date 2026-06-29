@@ -1,0 +1,497 @@
+ Set Up Social Engineering Lure Using Gophish
+Objectives
+By the end of this lab, students will be able to:
+
+Install and configure Gophish on a Linux system
+Create phishing email templates and landing pages
+Configure SMTP settings for campaign delivery
+Launch and monitor phishing campaigns using the Gophish interface
+Analyze campaign results and user interaction metrics
+Understand ethical implications of social engineering testing
+Prerequisites
+Basic Linux command line proficiency
+Understanding of email protocols (SMTP)
+Familiarity with HTML/CSS basics
+Knowledge of cybersecurity ethics and legal boundaries
+CRITICAL WARNING: This lab is for authorized educational purposes only. Unauthorized use of these techniques is illegal and unethical. Only conduct tests on systems you own or have explicit written permission to test.
+
+Lab Environment
+Al Nafi provides pre-configured Linux cloud machines. Click Start Lab to access your environment with:
+
+Ubuntu 20.04 LTS
+Python 3.8+
+Network access for package installation
+Web browser access to localhost
+Task 1: Install and Configure Gophish
+Step 1: Download Gophish
+# Update system and install dependencies
+sudo apt update && sudo apt install wget unzip -y
+
+# Create working directory
+mkdir ~/gophish && cd ~/gophish
+
+# Download Gophish (v0.12.1)
+wget https://github.com/gophish/gophish/releases/download/v0.12.1/gophish-v0.12.1-linux-64bit.zip
+
+# Extract and set permissions
+unzip gophish-v0.12.1-linux-64bit.zip
+chmod +x gophish
+Step 2: Configure Gophish Settings
+Edit the configuration file to set appropriate listening addresses:
+
+# Backup original config
+cp config.json config.json.bak
+
+# Edit config.json to change admin interface binding
+# Change "listen_url": "127.0.0.1:3333" to "0.0.0.0:3333" if needed
+nano config.json
+Key configuration parameters:
+
+admin_server.listen_url: Admin interface address (default: 127.0.0.1:3333)
+phish_server.listen_url: Phishing server address (default: 0.0.0.0:80)
+db_name: Database type (sqlite3)
+Step 3: Start Gophish
+# Start Gophish
+./gophish
+
+# Note the initial admin password displayed in terminal output
+# Example: "Please login with the username admin and the password 4304d5255378177d"
+Step 4: Access Admin Interface
+Open browser and navigate to http://localhost:3333
+Login with username admin and the password from terminal
+Change the default password immediately
+Generate an API key: Account Settings → Reset API Key
+Task 2: Create Campaign Components
+Step 1: Create User Group
+In the Gophish web interface:
+
+Navigate to Users & Groups → New Group
+Enter group name: "Test Users"
+Add test targets manually or import CSV:
+First Name,Last Name,Email,Position
+John,Doe,john.doe@test.local,Manager
+Jane,Smith,jane.smith@test.local,Developer
+Mike,Johnson,mike.johnson@test.local,Analyst
+Click Save
+Step 2: Create Email Template
+Navigate to Email Templates → New Template
+
+Template Name: Security Alert
+
+Subject: Urgent: Account Verification Required
+
+HTML Content (starter template):
+
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .header { background-color: #0078d4; color: white; padding: 15px; }
+        .content { padding: 20px; }
+        .button { background-color: #0078d4; color: white; padding: 10px 20px; 
+                  text-decoration: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>IT Security Department</h2>
+    </div>
+    <div class="content">
+        <p>Dear {{.FirstName}} {{.LastName}},</p>
+        <p>We have detected unusual activity on your account. Please verify your credentials immediately.</p>
+        <p><a href="{{.URL}}" class="button">Verify Account</a></p>
+        <p>This must be completed within 24 hours.</p>
+        <p>IT Security Team</p>
+    </div>
+</body>
+</html>
+Text Content:
+
+Dear {{.FirstName}} {{.LastName}},
+
+We have detected unusual activity on your account. Please verify your credentials at: {{.URL}}
+
+This must be completed within 24 hours.
+
+IT Security Team
+Important Variables:
+
+{{.FirstName}} - Target's first name
+{{.LastName}} - Target's last name
+{{.Email}} - Target's email
+{{.URL}} - Phishing landing page URL
+{{.Tracker}} - Tracking pixel
+Step 3: Create Landing Page
+Navigate to Landing Pages → New Page
+
+Page Name: Login Portal
+
+HTML Content (starter template):
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Account Verification</title>
+    <style>
+        body { background-color: #f5f5f5; font-family: Arial, sans-serif; }
+        .container { max-width: 400px; margin: 50px auto; background: white; 
+                     padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .logo { text-align: center; color: #0078d4; margin-bottom: 20px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; 
+                border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: #0078d4; color: white; 
+                 border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h2>Account Verification</h2>
+        </div>
+        <form method="post">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">Verify Account</button>
+        </form>
+    </div>
+    {{.Tracker}}
+</body>
+</html>
+Configuration:
+
+Enable Capture Submitted Data
+Enable Capture Passwords
+Optionally add redirect URL for post-submission
+Step 4: Configure SMTP Profile
+Navigate to Sending Profiles → New Profile
+
+For Local Testing (using local mail server):
+
+# Install local SMTP server
+sudo apt install postfix -y
+
+# Configure for local delivery only
+sudo dpkg-reconfigure postfix
+# Select: Local only
+SMTP Settings:
+
+Name: Local SMTP
+Host: localhost:25
+From: security@company.local
+Username: (leave blank for local)
+Password: (leave blank for local)
+For External SMTP (e.g., Gmail):
+
+Host: smtp.gmail.com:587
+Username: your-email@gmail.com
+Password: app-specific password
+Enable Use TLS
+Task 3: Launch and Monitor Campaign
+Step 1: Create Campaign
+Navigate to Campaigns → New Campaign
+
+Campaign Configuration:
+
+Name: Security Awareness Test
+Email Template: Select "Security Alert"
+Landing Page: Select "Login Portal"
+URL: http://your-server-ip:80 (or domain)
+Sending Profile: Select configured SMTP
+Groups: Select "Test Users"
+Launch Date: Immediate or scheduled
+Click Launch Campaign
+
+Step 2: Monitor Campaign Dashboard
+The campaign dashboard displays real-time metrics:
+
+Total Targets: Number of recipients
+Emails Sent: Successfully delivered emails
+Emails Opened: Recipients who opened the email
+Clicked Link: Recipients who clicked the phishing link
+Submitted Data: Recipients who entered credentials
+Reported: Recipients who reported the email
+Step 3: Analyze Individual Results
+Click on campaign name to view detailed results:
+
+Timeline: Chronological event visualization
+Target Details: Individual user actions
+Submitted Data: Captured credentials (if any)
+User Agent: Browser and device information
+IP Addresses: Source IPs of interactions
+Step 4: Export Results
+Export campaign data for reporting:
+
+Click Export CSV button
+Data includes: email, status, IP, timestamp, submitted data
+Use for security awareness training metrics
+Task 4: Automate Campaign Management with Python
+Step 1: Install Python Dependencies
+pip3 install requests python-dateutil
+Step 2: Create Campaign Automation Script
+Create campaign_manager.py:
+
+#!/usr/bin/env python3
+import requests
+import json
+from datetime import datetime, timedelta
+
+class GophishAPI:
+    def __init__(self, api_url, api_key):
+        """
+        Initialize Gophish API client.
+        
+        Args:
+            api_url: Base URL for Gophish API (e.g., http://localhost:3333/api)
+            api_key: API key from Gophish account settings
+        """
+        self.api_url = api_url
+        self.headers = {
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json'
+        }
+    
+    def get_campaigns(self):
+        """
+        Retrieve all campaigns.
+        
+        Returns:
+            List of campaign objects or None on error
+        """
+        # TODO: Implement GET request to /api/campaigns/
+        # TODO: Handle response and return JSON data
+        pass
+    
+    def get_campaign_summary(self, campaign_id):
+        """
+        Get summary statistics for a specific campaign.
+        
+        Args:
+            campaign_id: Campaign ID to retrieve
+        
+        Returns:
+            Dictionary with campaign statistics
+        """
+        # TODO: Implement GET request to /api/campaigns/{id}/summary
+        # TODO: Parse and return statistics
+        pass
+    
+    def create_campaign(self, name, template_id, page_id, smtp_id, group_id, url):
+        """
+        Create and launch a new campaign.
+        
+        Args:
+            name: Campaign name
+            template_id: Email template ID
+            page_id: Landing page ID
+            smtp_id: SMTP profile ID
+            group_id: Target group ID
+            url: Phishing URL
+        
+        Returns:
+            Created campaign object or None on error
+        """
+        campaign_data = {
+            'name': name,
+            'template': {'id': template_id},
+            'page': {'id': page_id},
+            'smtp': {'id': smtp_id},
+            'groups': [{'id': group_id}],
+            'url': url,
+            'launch_date': datetime.now().isoformat()
+        }
+        
+        # TODO: Implement POST request to /api/campaigns/
+        # TODO: Handle response and return campaign data
+        pass
+    
+    def display_statistics(self, campaign_id):
+        """
+        Display formatted campaign statistics.
+        
+        Args:
+            campaign_id: Campaign ID to display
+        """
+        # TODO: Get campaign summary
+        # TODO: Calculate and display success rates
+        # TODO: Format output for readability
+        pass
+
+def main():
+    # Configuration
+    API_URL = 'http://localhost:3333/api'
+    API_KEY = 'your_api_key_here'  # Replace with actual API key
+    
+    # TODO: Initialize GophishAPI client
+    # TODO: Retrieve and display all campaigns
+    # TODO: Allow user to select campaign for monitoring
+    # TODO: Display detailed statistics
+    
+    pass
+
+if __name__ == '__main__':
+    main()
+Step 3: Create Results Analysis Script
+Create analyze_results.py:
+
+#!/usr/bin/env python3
+import requests
+import json
+import csv
+from collections import Counter
+
+class CampaignAnalyzer:
+    def __init__(self, api_url, api_key):
+        """Initialize campaign analyzer with API credentials."""
+        self.api_url = api_url
+        self.headers = {'Authorization': f'Bearer {api_key}'}
+    
+    def calculate_success_rates(self, campaign_id):
+        """
+        Calculate campaign success rates.
+        
+        Args:
+            campaign_id: Campaign to analyze
+        
+        Returns:
+            Dictionary with calculated rates
+        """
+        # TODO: Fetch campaign results
+        # TODO: Calculate open rate, click rate, submission rate
+        # TODO: Return dictionary with percentages
+        pass
+    
+    def identify_vulnerable_users(self, campaign_id):
+        """
+        Identify users who submitted credentials.
+        
+        Args:
+            campaign_id: Campaign to analyze
+        
+        Returns:
+            List of vulnerable user emails
+        """
+        # TODO: Fetch campaign results
+        # TODO: Filter users who submitted data
+        # TODO: Return list of emails
+        pass
+    
+    def generate_report(self, campaign_id, output_file):
+        """
+        Generate comprehensive campaign report.
+        
+        Args:
+            campaign_id: Campaign to report on
+            output_file: Path to output CSV file
+        """
+        # TODO: Collect all campaign data
+        # TODO: Format data for CSV export
+        # TODO: Write to output file
+        pass
+    
+    def compare_campaigns(self, campaign_ids):
+        """
+        Compare multiple campaigns.
+        
+        Args:
+            campaign_ids: List of campaign IDs to compare
+        
+        Returns:
+            Comparison statistics dictionary
+        """
+        # TODO: Fetch data for all campaigns
+        # TODO: Calculate comparative metrics
+        # TODO: Return comparison results
+        pass
+
+def main():
+    API_URL = 'http://localhost:3333/api'
+    API_KEY = 'your_api_key_here'
+    
+    # TODO: Initialize analyzer
+    # TODO: Prompt user for campaign selection
+    # TODO: Generate and display analysis
+    # TODO: Export results to CSV
+    
+    pass
+
+if __name__ == '__main__':
+    main()
+Step 4: Test Automation Scripts
+# Make scripts executable
+chmod +x campaign_manager.py analyze_results.py
+
+# Run campaign manager
+python3 campaign_manager.py
+
+# Run results analyzer
+python3 analyze_results.py
+Expected Outcomes
+Upon completion, students should have:
+
+Functional Gophish installation with admin access
+Created phishing campaign components (templates, pages, groups)
+Launched at least one test campaign
+Monitored campaign metrics in real-time
+Analyzed results to identify vulnerable users
+Developed Python scripts for campaign automation
+Understanding of social engineering attack vectors
+Key Metrics to Observe:
+
+Email open rates (typically 20-40% in real scenarios)
+Click-through rates (typically 10-20%)
+Credential submission rates (typically 5-15%)
+Time to first interaction
+Troubleshooting Tips
+Issue: Gophish won't start or shows port binding error
+
+Solution: Check if ports 3333 and 80 are already in use
+Run: sudo netstat -tulpn | grep -E '3333|80'
+Kill conflicting processes or change ports in config.json
+Issue: Emails not being sent
+
+Solution: Verify SMTP configuration and credentials
+Test SMTP connectivity: telnet smtp-server 25
+Check Gophish logs for detailed error messages
+Ensure firewall allows outbound SMTP connections
+Issue: Landing page not capturing credentials
+
+Solution: Verify form method is POST and includes {{.Tracker}}
+Check "Capture Submitted Data" is enabled in landing page settings
+Ensure form field names are present (username, password)
+Issue: API authentication fails
+
+Solution: Regenerate API key in Account Settings
+Verify API key is correctly copied (no extra spaces)
+Check API URL format: http://localhost:3333/api
+Issue: Campaign shows "Error Sending Email"
+
+Solution: Verify target email addresses are valid
+Check SMTP server allows relay from your IP
+Review SMTP authentication credentials
+Test with a single target first before bulk sending
+Conclusion
+This lab provided hands-on experience with Gophish, a professional phishing simulation platform. Students learned to create realistic social engineering campaigns, monitor user behavior, and analyze security awareness gaps.
+
+Key Takeaways:
+
+Social engineering remains a primary attack vector
+User awareness training is critical for organizational security
+Phishing simulations help identify vulnerable users
+Metrics-driven approach improves security posture
+Automation enables scalable security testing
+Ethical Considerations:
+
+Always obtain written authorization before testing
+Inform participants after campaign completion
+Use results for training, not punishment
+Protect captured data and delete after analysis
+Follow organizational policies and legal requirements
+Next Steps:
+
+Conduct regular phishing simulations (quarterly recommended)
+Develop targeted training for vulnerable users
+Create custom templates based on organizational context
+Integrate results with security awareness programs
+Track improvement metrics over time
+Remember: The goal is to improve security awareness, not to embarrass users. Use these tools responsibly and ethically.
