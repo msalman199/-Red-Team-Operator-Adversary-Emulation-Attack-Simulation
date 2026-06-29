@@ -1,0 +1,14 @@
+Domain: WORKGROUP
+SysKey: 1234567890abcdef1234567890abcdef
+
+RID: 500 (Administrator)
+User: Administrator
+Hash NTLM: aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0
+
+RID: 1001 (user1)
+User: user1
+Hash NTLM: aad3b435b51404eeaad3b435b51404ee:8846f7eaee8fb117ad06bdd830b7586c
+
+RID: 1002 (testuser)
+User: testuser
+Hash NTLM: aad3b435b51404eeaad3b435b51404ee:e19ccf75ee54e06b06a5907af13cef42
