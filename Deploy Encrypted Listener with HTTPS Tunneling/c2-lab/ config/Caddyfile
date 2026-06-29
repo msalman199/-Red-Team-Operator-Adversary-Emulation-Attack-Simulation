@@ -1,0 +1,24 @@
+localhost:8443 {
+    tls internal
+    reverse_proxy localhost:8080
+    
+    log {
+        output file logs/caddy.log
+        format json
+    }
+    
+    header {
+        -Server
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+    }
+}
+
+c2.local:8443 {
+    tls internal
+    reverse_proxy localhost:8080
+    
+    log {
+        output file logs/caddy-domain.log
+    }
+}
