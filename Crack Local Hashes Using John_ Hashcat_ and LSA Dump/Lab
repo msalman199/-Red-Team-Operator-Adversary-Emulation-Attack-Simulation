@@ -1,0 +1,469 @@
+ Crack Local Hashes Using John, Hashcat, and LSA Dump
+Objectives
+By the end of this lab, students will be able to:
+
+Extract and identify different password hash types from Linux systems
+Use John the Ripper for dictionary and rule-based password cracking
+Leverage Hashcat for advanced hash cracking with various attack modes
+Simulate LSA dump extraction and process NTLM hashes
+Automate hash cracking workflows using Python scripts
+Prerequisites
+Basic Linux command line proficiency
+Understanding of cryptographic hash functions (MD5, SHA-256, NTLM)
+Fundamental Python programming skills
+Knowledge of password security concepts
+Lab Environment
+Your cloud machine includes:
+
+Ubuntu 22.04 LTS
+John the Ripper (pre-installed)
+Hashcat (pre-installed)
+Python 3.x with standard libraries
+Sample wordlists in /usr/share/wordlists/
+Click Start Lab to access your pre-configured environment.
+
+Task 1: Setup and Hash Identification
+Step 1: Create Working Directory
+cd ~
+mkdir hash_lab && cd hash_lab
+Step 2: Generate Sample Hash Files
+# MD5 hashes (32 characters)
+cat > md5_hashes.txt << EOF
+user1:5d41402abc4b2a76b9719d911017c592
+user2:098f6bcd4621d373cade4e832627b4f6
+user3:e10adc3949ba59abbe56e057f20f883e
+EOF
+
+# SHA-256 hashes (64 characters)
+cat > sha256_hashes.txt << EOF
+admin:5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8
+guest:ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f
+EOF
+
+# NTLM hashes (Windows format)
+cat > ntlm_hashes.txt << EOF
+administrator:500:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+user:1001:aad3b435b51404eeaad3b435b51404ee:8846f7eaee8fb117ad06bdd830b7586c:::
+EOF
+Step 3: Create Custom Wordlist
+cat > wordlist.txt << EOF
+password
+123456
+admin
+hello
+test
+guest
+EOF
+Step 4: Identify Hash Types
+# Install hash-identifier if needed
+sudo apt-get update && sudo apt-get install -y hash-identifier
+
+# Identify hash type
+echo "5d41402abc4b2a76b9719d911017c592" | hash-identifier
+Expected Output: Tool should identify MD5 (32 hex characters)
+
+Task 2: Password Cracking with John the Ripper
+Step 1: Basic Dictionary Attack
+# Check available formats
+john --list=formats | grep -i "raw-md5"
+
+# Crack MD5 hashes
+john --format=Raw-MD5 --wordlist=wordlist.txt md5_hashes.txt
+
+# View cracked passwords
+john --show --format=Raw-MD5 md5_hashes.txt
+Step 2: Rule-Based Attack
+# Create custom rules file
+cat > custom.rule << EOF
+# Append digits
+$1 $2 $3
+$0 $0 $0
+# Capitalize first letter
+c
+# Toggle case
+t
+EOF
+
+# Apply rules during cracking
+john --format=Raw-MD5 --wordlist=wordlist.txt --rules=custom md5_hashes.txt
+Step 3: Crack SHA-256 Hashes
+# Crack SHA-256 format
+john --format=Raw-SHA256 --wordlist=wordlist.txt sha256_hashes.txt
+
+# Show results
+john --show --format=Raw-SHA256 sha256_hashes.txt
+Step 4: Check Cracking Status
+# View current session status
+john --status
+
+# Resume interrupted session
+john --restore
+Task 3: Advanced Cracking with Hashcat
+Step 1: Dictionary Attack with Hashcat
+# MD5 hash mode is 0
+hashcat -m 0 -a 0 md5_hashes.txt wordlist.txt
+
+# Show cracked hashes
+hashcat -m 0 md5_hashes.txt --show
+Step 2: Rule-Based Attack
+# Use built-in best64 rule
+hashcat -m 0 -a 0 md5_hashes.txt wordlist.txt -r /usr/share/hashcat/rules/best64.rule
+
+# View results
+hashcat -m 0 md5_hashes.txt --show
+Step 3: Mask Attack (Brute Force)
+# Mask: 4 lowercase letters + 2 digits
+# ?l = lowercase, ?d = digit
+hashcat -m 0 -a 3 md5_hashes.txt ?l?l?l?l?d?d
+
+# Custom mask for common patterns
+hashcat -m 0 -a 3 md5_hashes.txt ?u?l?l?l?l?d?d
+Step 4: Hybrid Attack
+# Wordlist + mask (append 2 digits)
+hashcat -m 0 -a 6 md5_hashes.txt wordlist.txt ?d?d
+
+# Mask + wordlist (prepend 2 digits)
+hashcat -m 0 -a 7 md5_hashes.txt ?d?d wordlist.txt
+Step 5: Crack NTLM Hashes
+# Extract NTLM hash portion (4th field)
+cut -d: -f4 ntlm_hashes.txt > ntlm_only.txt
+
+# NTLM hash mode is 1000
+hashcat -m 1000 -a 0 ntlm_only.txt wordlist.txt
+
+# Show results
+hashcat -m 1000 ntlm_only.txt --show
+Task 4: LSA Dump Simulation and Processing
+Step 1: Create Simulated LSA Dump
+cat > lsa_dump.txt << EOF
+Domain: WORKGROUP
+SysKey: 1234567890abcdef1234567890abcdef
+
+RID: 500 (Administrator)
+User: Administrator
+Hash NTLM: aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0
+
+RID: 1001 (user1)
+User: user1
+Hash NTLM: aad3b435b51404eeaad3b435b51404ee:8846f7eaee8fb117ad06bdd830b7586c
+
+RID: 1002 (testuser)
+User: testuser
+Hash NTLM: aad3b435b51404eeaad3b435b51404ee:e19ccf75ee54e06b06a5907af13cef42
+EOF
+Step 2: Extract NTLM Hashes with Python
+Create extract_ntlm.py:
+
+#!/usr/bin/env python3
+import re
+import sys
+
+def extract_ntlm_hashes(filename):
+    """
+    Extract NTLM hashes from LSA dump file.
+    
+    Args:
+        filename: Path to LSA dump file
+    
+    Returns:
+        Number of hashes extracted
+    """
+    # TODO: Open and read the file
+    # TODO: Use regex to find User and Hash NTLM patterns
+    # TODO: Extract username and NTLM hash (second part after colon)
+    # TODO: Write to extracted_ntlm.txt in format: username:hash
+    # TODO: Return count of extracted hashes
+    pass
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python3 extract_ntlm.py <lsa_dump_file>")
+        sys.exit(1)
+    
+    # TODO: Call extract_ntlm_hashes function
+    # TODO: Print summary of extraction
+    pass
+Hint: Use re.findall() with pattern r'User:\s+(\w+).*?Hash NTLM:\s+[a-fA-F0-9]{32}:([a-fA-F0-9]{32})'
+
+Step 3: Run Extraction Script
+chmod +x extract_ntlm.py
+python3 extract_ntlm.py lsa_dump.txt
+
+# Verify extracted hashes
+cat extracted_ntlm.txt
+Step 4: Crack Extracted Hashes
+# Use Hashcat on extracted NTLM hashes
+hashcat -m 1000 -a 0 extracted_ntlm.txt wordlist.txt
+hashcat -m 1000 extracted_ntlm.txt --show
+Task 5: Automation with Python
+Step 1: Create Hash Analysis Script
+Create hash_analyzer.py:
+
+#!/usr/bin/env python3
+import hashlib
+import os
+
+class HashAnalyzer:
+    def __init__(self):
+        self.hash_patterns = {
+            'MD5': 32,
+            'SHA256': 64,
+            'SHA512': 128
+        }
+    
+    def identify_hash_type(self, hash_string):
+        """
+        Identify hash type based on length.
+        
+        Args:
+            hash_string: The hash to identify
+        
+        Returns:
+            String indicating hash type
+        """
+        # TODO: Strip whitespace from hash_string
+        # TODO: Get length of hash
+        # TODO: Match length to hash type
+        # TODO: Return hash type or "Unknown"
+        pass
+    
+    def analyze_file(self, filename):
+        """
+        Analyze hash file and provide statistics.
+        
+        Args:
+            filename: Path to hash file
+        """
+        # TODO: Check if file exists
+        # TODO: Read file line by line
+        # TODO: Extract hash from each line (handle username:hash format)
+        # TODO: Identify hash type for each
+        # TODO: Print statistics (total hashes, types found)
+        pass
+    
+    def generate_test_hashes(self, password):
+        """
+        Generate test hashes for a given password.
+        
+        Args:
+            password: Password to hash
+        
+        Returns:
+            Dictionary with hash types and values
+        """
+        # TODO: Generate MD5 hash using hashlib.md5()
+        # TODO: Generate SHA256 hash using hashlib.sha256()
+        # TODO: Return dictionary with results
+        pass
+
+if __name__ == "__main__":
+    analyzer = HashAnalyzer()
+    
+    # TODO: Test with sample passwords
+    # TODO: Analyze existing hash files
+    pass
+Step 2: Create Automated Cracking Script
+Create auto_crack.py:
+
+#!/usr/bin/env python3
+import subprocess
+import os
+
+class HashCracker:
+    def __init__(self, wordlist="wordlist.txt"):
+        self.wordlist = wordlist
+        self.results = {}
+    
+    def run_john(self, hash_file, hash_format):
+        """
+        Run John the Ripper on hash file.
+        
+        Args:
+            hash_file: Path to hash file
+            hash_format: John format (e.g., "Raw-MD5")
+        
+        Returns:
+            List of cracked passwords
+        """
+        # TODO: Build john command with format and wordlist
+        # TODO: Execute using subprocess.run()
+        # TODO: Run john --show to get results
+        # TODO: Parse and return cracked passwords
+        pass
+    
+    def run_hashcat(self, hash_file, hash_mode):
+        """
+        Run Hashcat on hash file.
+        
+        Args:
+            hash_file: Path to hash file
+            hash_mode: Hashcat mode (e.g., "0" for MD5)
+        
+        Returns:
+            List of cracked passwords
+        """
+        # TODO: Build hashcat command with mode and wordlist
+        # TODO: Execute using subprocess.run()
+        # TODO: Run hashcat --show to get results
+        # TODO: Parse and return cracked passwords
+        pass
+    
+    def crack_all(self, hash_files):
+        """
+        Crack multiple hash files with appropriate tools.
+        
+        Args:
+            hash_files: Dictionary mapping filenames to (john_format, hashcat_mode)
+        """
+        # TODO: Iterate through hash_files
+        # TODO: Run both John and Hashcat on each
+        # TODO: Store results in self.results
+        # TODO: Print summary
+        pass
+    
+    def generate_report(self):
+        """Generate summary report of cracking results."""
+        # TODO: Print formatted report
+        # TODO: Show success rates
+        # TODO: List cracked passwords
+        pass
+
+if __name__ == "__main__":
+    cracker = HashCracker()
+    
+    # TODO: Define hash files to crack
+    # TODO: Run cracking operations
+    # TODO: Generate report
+    pass
+Step 3: Run Automation Scripts
+chmod +x hash_analyzer.py auto_crack.py
+
+# Analyze hashes
+python3 hash_analyzer.py
+
+# Run automated cracking
+python3 auto_crack.py
+Task 6: Performance Optimization and Reporting
+Step 1: Benchmark Tools
+# John the Ripper benchmark
+john --test
+
+# Hashcat benchmark (shows GPU/CPU performance)
+hashcat -b -m 0
+Step 2: Create HTML Report Generator
+Create generate_report.py:
+
+#!/usr/bin/env python3
+from datetime import datetime
+import subprocess
+
+class ReportGenerator:
+    def __init__(self):
+        self.timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.results = {}
+    
+    def collect_results(self, hash_file, tool, format_or_mode):
+        """
+        Collect cracking results from a tool.
+        
+        Args:
+            hash_file: Hash file that was cracked
+            tool: "john" or "hashcat"
+            format_or_mode: Format for John or mode for Hashcat
+        
+        Returns:
+            List of cracked passwords
+        """
+        # TODO: Build appropriate --show command
+        # TODO: Execute and capture output
+        # TODO: Parse results
+        # TODO: Return list of cracked passwords
+        pass
+    
+    def generate_html(self, output_file="report.html"):
+        """
+        Generate HTML report.
+        
+        Args:
+            output_file: Path to output HTML file
+        """
+        # TODO: Create HTML structure with results
+        # TODO: Include timestamp, files analyzed, success rates
+        # TODO: Format as table with styling
+        # TODO: Write to output_file
+        pass
+    
+    def generate_json(self, output_file="report.json"):
+        """
+        Generate JSON report.
+        
+        Args:
+            output_file: Path to output JSON file
+        """
+        # TODO: Create JSON structure with results
+        # TODO: Include all metadata and results
+        # TODO: Write to output_file
+        pass
+
+if __name__ == "__main__":
+    # TODO: Initialize reporter
+    # TODO: Collect results from all hash files
+    # TODO: Generate HTML and JSON reports
+    pass
+Step 3: Generate Final Report
+chmod +x generate_report.py
+python3 generate_report.py
+
+# View HTML report
+firefox report.html &
+Expected Outcomes
+After completing this lab, you should have:
+
+Successfully identified multiple hash types (MD5, SHA-256, NTLM)
+Cracked passwords using both John the Ripper and Hashcat
+Extracted NTLM hashes from simulated LSA dump
+Created Python automation scripts for hash analysis and cracking
+Generated comprehensive reports of cracking results
+Understanding of different attack modes (dictionary, rule-based, mask, hybrid)
+Success Criteria:
+
+At least 50% of sample hashes cracked
+All Python scripts execute without errors
+HTML report generated with results
+Understanding of when to use each tool and attack mode
+Troubleshooting Tips
+Issue: John the Ripper shows "No password hashes loaded"
+
+Solution: Verify hash format matches file content. Use --list=formats to check available formats.
+Issue: Hashcat shows "No devices found"
+
+Solution: Hashcat prefers GPU but can use CPU. Add --force flag for CPU-only mode: hashcat --force -m 0 ...
+Issue: Python script fails with "command not found"
+
+Solution: Ensure full path to tools or verify they're in PATH. Use which john and which hashcat to verify.
+Issue: Wordlist attack finds no passwords
+
+Solution: Try rule-based attacks or create better wordlist. Common passwords: password, 123456, admin, test, hello.
+Issue: Extraction script finds no hashes
+
+Solution: Check regex pattern matches your LSA dump format. Verify file encoding is UTF-8.
+Conclusion
+This lab provided hands-on experience with industry-standard password cracking tools. You learned to:
+
+Identify and extract various hash types from system files
+Apply multiple attack strategies (dictionary, rules, masks, hybrid)
+Automate repetitive cracking tasks with Python
+Compare effectiveness of different tools and techniques
+Key Takeaways:
+
+Hash type identification is critical for selecting correct cracking mode
+Rule-based attacks significantly improve success rates over dictionary alone
+Automation enables efficient processing of multiple hash files
+Different tools excel at different tasks (John for CPU, Hashcat for GPU)
+Next Steps:
+
+Experiment with larger wordlists (rockyou.txt)
+Create custom rule sets for specific password policies
+Explore GPU acceleration with Hashcat
+Study password policy recommendations based on cracking difficulty
+Security Note: These techniques are for authorized security testing only. Unauthorized access to systems or data is illegal.
