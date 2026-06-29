@@ -1,0 +1,447 @@
+Integrate Campaign with VECTR
+Objectives
+By the end of this lab, students will be able to:
+
+Install and configure VECTR for Red Team operation tracking
+Document Red Team tactics using the MITRE ATT&CK framework
+Create Python scripts to interact with VECTR's REST API
+Log Red Team activities systematically during campaigns
+Generate automated reports from campaign data
+Prerequisites
+Before starting this lab, students should have:
+
+Basic understanding of Red Team operations and MITRE ATT&CK framework
+Familiarity with Linux command line and Docker
+Basic Python programming knowledge and REST API concepts
+Understanding of JSON data formats
+Lab Environment
+Al Nafi provides Linux-based cloud machines for this lab. Simply click Start Lab to access your pre-configured environment with Docker pre-installed.
+
+Task 1: Install and Configure VECTR
+Step 1.1: Install Docker Components
+# Update system and install Docker
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y docker.io docker-compose
+
+# Add user to docker group
+sudo usermod -aG docker $USER
+newgrp docker
+
+# Verify installation
+docker --version
+docker-compose --version
+Step 1.2: Deploy VECTR
+# Create working directory
+mkdir -p ~/vectr-lab && cd ~/vectr-lab
+
+# Clone VECTR repository
+git clone https://github.com/SecurityRiskAdvisors/VECTR.git
+cd VECTR
+
+# Create environment configuration
+cat > .env << 'EOF'
+VECTR_HOSTNAME=localhost
+VECTR_PORT=8081
+VECTR_DATA_KEY=change-this-secret-key
+MONGO_INITDB_ROOT_USERNAME=vectr
+MONGO_INITDB_ROOT_PASSWORD=vectr123!
+EOF
+
+chmod 600 .env
+Step 1.3: Start VECTR Services
+# Launch VECTR containers
+docker-compose up -d
+
+# Verify containers are running
+docker-compose ps
+
+# Wait for initialization (2-3 minutes)
+sleep 180
+
+# Check service health
+curl -k https://localhost:8081/health
+Step 1.4: Access VECTR Interface
+# Display access information
+echo "VECTR URL: https://localhost:8081"
+echo "Default Username: admin"
+echo "Default Password: 11_ThisIsTheFirstPassword_11"
+Access the web interface and change the default password immediately.
+
+Task 2: Document Red Team Campaign in VECTR
+Step 2.1: Create Campaign via API
+Create a Python script to authenticate and create campaigns:
+
+#!/usr/bin/env python3
+import requests
+import json
+import urllib3
+from datetime import datetime, timedelta
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+class VECTRClient:
+    def __init__(self, base_url, username, password):
+        self.base_url = base_url
+        self.session = requests.Session()
+        self.session.verify = False
+        self.token = None
+        # TODO: Implement authentication method
+        # TODO: Store token and update session headers
+    
+    def authenticate(self, username, password):
+        """
+        Authenticate with VECTR API and store token.
+        
+        Args:
+            username: VECTR username
+            password: VECTR password
+        
+        Returns:
+            Boolean indicating success
+        """
+        # TODO: Send POST request to /api/v1/auth/login
+        # TODO: Extract token from response
+        # TODO: Update session headers with Bearer token
+        pass
+    
+    def create_campaign(self, name, description):
+        """
+        Create a new Red Team campaign.
+        
+        Args:
+            name: Campaign name
+            description: Campaign description
+        
+        Returns:
+            Campaign object with ID
+        """
+        campaign_data = {
+            "name": name,
+            "description": description,
+            "startDate": datetime.now().isoformat(),
+            "endDate": (datetime.now() + timedelta(days=30)).isoformat(),
+            "status": "active"
+        }
+        
+        # TODO: Send POST request to /api/v1/campaigns
+        # TODO: Handle response and return campaign object
+        # TODO: Save campaign ID to file for later use
+        pass
+
+# Initialize and use client
+if __name__ == "__main__":
+    vectr = VECTRClient("https://localhost:8081", "admin", "your-password")
+    # TODO: Create campaign and save ID
+Required packages:
+
+pip3 install requests urllib3
+Step 2.2: Document MITRE ATT&CK Techniques
+Create a script to add techniques to your campaign:
+
+#!/usr/bin/env python3
+
+class TechniqueManager:
+    def __init__(self, vectr_client, campaign_id):
+        self.client = vectr_client
+        self.campaign_id = campaign_id
+    
+    def add_technique(self, technique_data):
+        """
+        Add a MITRE ATT&CK technique to the campaign.
+        
+        Args:
+            technique_data: Dictionary with technique details
+                - techniqueId: MITRE ATT&CK ID (e.g., T1566.001)
+                - techniqueName: Technique name
+                - tactic: MITRE tactic
+                - description: Technique description
+                - status: planned/executed/failed
+        
+        Returns:
+            Boolean indicating success
+        """
+        # TODO: Send POST to /api/v1/campaigns/{id}/techniques
+        # TODO: Handle response and error cases
+        pass
+    
+    def bulk_add_techniques(self, techniques_list):
+        """
+        Add multiple techniques to campaign.
+        
+        Args:
+            techniques_list: List of technique dictionaries
+        
+        Returns:
+            Count of successfully added techniques
+        """
+        # TODO: Iterate through techniques_list
+        # TODO: Call add_technique for each
+        # TODO: Track success/failure count
+        pass
+
+# Example technique structure
+example_techniques = [
+    {
+        "techniqueId": "T1566.001",
+        "techniqueName": "Spearphishing Attachment",
+        "tactic": "Initial Access",
+        "description": "Email with malicious attachment",
+        "status": "planned"
+    },
+    {
+        "techniqueId": "T1059.001",
+        "techniqueName": "PowerShell",
+        "tactic": "Execution",
+        "description": "PowerShell command execution",
+        "status": "planned"
+    }
+]
+
+# TODO: Implement technique addition logic
+Step 2.3: Log Red Team Activities
+Create an activity logging framework:
+
+#!/usr/bin/env python3
+import subprocess
+from datetime import datetime
+
+class ActivityLogger:
+    def __init__(self, vectr_client, campaign_id):
+        self.client = vectr_client
+        self.campaign_id = campaign_id
+    
+    def log_activity(self, technique_id, command, output, success=True):
+        """
+        Log a Red Team activity execution.
+        
+        Args:
+            technique_id: MITRE ATT&CK technique ID
+            command: Command executed
+            output: Command output (truncate if needed)
+            success: Boolean indicating success
+        
+        Returns:
+            Activity ID if successful
+        """
+        activity_data = {
+            "timestamp": datetime.now().isoformat(),
+            "techniqueId": technique_id,
+            "command": command,
+            "output": output[:1000],  # Limit size
+            "success": success,
+            "operator": "red-team-01"
+        }
+        
+        # TODO: Send POST to /api/v1/campaigns/{id}/activities
+        # TODO: Return activity ID from response
+        pass
+    
+    def execute_and_log(self, technique_id, command):
+        """
+        Execute command and automatically log results.
+        
+        Args:
+            technique_id: MITRE technique ID
+            command: Shell command to execute
+        
+        Returns:
+            Tuple of (success, output)
+        """
+        # TODO: Execute command using subprocess
+        # TODO: Capture output and return code
+        # TODO: Call log_activity with results
+        # TODO: Handle exceptions appropriately
+        pass
+
+# TODO: Implement activity logging for common Red Team actions
+Task 3: Automate Reporting with Python
+Step 3.1: Create Report Generator
+Build a comprehensive reporting system:
+
+#!/usr/bin/env python3
+import json
+from datetime import datetime
+
+class VECTRReporter:
+    def __init__(self, vectr_client, campaign_id):
+        self.client = vectr_client
+        self.campaign_id = campaign_id
+    
+    def get_campaign_data(self):
+        """
+        Retrieve all campaign data from VECTR.
+        
+        Returns:
+            Dictionary containing:
+                - campaign: Campaign details
+                - techniques: List of techniques
+                - activities: List of activities
+        """
+        data = {}
+        
+        # TODO: GET /api/v1/campaigns/{id}
+        # TODO: GET /api/v1/campaigns/{id}/techniques
+        # TODO: GET /api/v1/campaigns/{id}/activities
+        # TODO: Combine into single data structure
+        
+        return data
+    
+    def calculate_statistics(self, campaign_data):
+        """
+        Calculate campaign statistics.
+        
+        Args:
+            campaign_data: Data from get_campaign_data()
+        
+        Returns:
+            Dictionary with statistics:
+                - total_techniques
+                - total_activities
+                - success_rate
+                - techniques_by_tactic
+                - timeline_data
+        """
+        # TODO: Count total techniques and activities
+        # TODO: Calculate success rate
+        # TODO: Group techniques by tactic
+        # TODO: Create timeline of activities
+        pass
+    
+    def generate_json_report(self, output_file="report.json"):
+        """
+        Generate JSON report file.
+        
+        Args:
+            output_file: Output filename
+        
+        Returns:
+            Path to generated report
+        """
+        # TODO: Get campaign data
+        # TODO: Calculate statistics
+        # TODO: Create report structure
+        # TODO: Write to JSON file
+        pass
+    
+    def generate_html_report(self, output_file="report.html"):
+        """
+        Generate HTML report with visualizations.
+        
+        Args:
+            output_file: Output filename
+        
+        Returns:
+            Path to generated HTML report
+        """
+        # TODO: Get campaign data and statistics
+        # TODO: Create HTML template with CSS
+        # TODO: Include technique tables
+        # TODO: Add activity timeline
+        # TODO: Write to file
+        pass
+
+# TODO: Implement report generation logic
+Step 3.2: Create Integration Wrapper
+Build a complete integration class:
+
+#!/usr/bin/env python3
+
+class VECTRIntegration:
+    """Complete VECTR integration for Red Team operations."""
+    
+    def __init__(self, base_url, username, password):
+        self.base_url = base_url
+        self.client = None  # VECTRClient instance
+        self.campaign_id = None
+        # TODO: Initialize client and authenticate
+    
+    def setup_campaign(self, name, description, techniques):
+        """
+        Complete campaign setup workflow.
+        
+        Args:
+            name: Campaign name
+            description: Campaign description
+            techniques: List of technique dictionaries
+        
+        Returns:
+            Campaign ID
+        """
+        # TODO: Create campaign
+        # TODO: Add all techniques
+        # TODO: Return campaign ID
+        pass
+    
+    def run_and_log_command(self, technique_id, command):
+        """
+        Execute command and log to VECTR.
+        
+        Args:
+            technique_id: MITRE technique ID
+            command: Command to execute
+        
+        Returns:
+            Tuple of (success, output)
+        """
+        # TODO: Execute command safely
+        # TODO: Log activity to VECTR
+        # TODO: Return results
+        pass
+    
+    def generate_final_report(self, format="both"):
+        """
+        Generate campaign reports.
+        
+        Args:
+            format: "json", "html", or "both"
+        
+        Returns:
+            List of generated report files
+        """
+        # TODO: Create reporter instance
+        # TODO: Generate requested format(s)
+        # TODO: Return file paths
+        pass
+
+# Example usage workflow
+def main():
+    # TODO: Initialize integration
+    # TODO: Setup campaign with techniques
+    # TODO: Execute and log Red Team activities
+    # TODO: Generate final reports
+    pass
+
+if __name__ == "__main__":
+    main()
+Expected Outcomes
+After completing this lab, you should have:
+
+A running VECTR instance accessible via web interface
+Python scripts that interact with VECTR's REST API
+A documented Red Team campaign with multiple techniques
+Logged activities from simulated Red Team operations
+Generated JSON and HTML reports from campaign data
+Understanding of systematic Red Team documentation practices
+Troubleshooting Tips
+VECTR won't start:
+
+Check Docker service: sudo systemctl status docker
+View logs: docker-compose logs -f
+Ensure ports 8081 and 27017 are available
+API authentication fails:
+
+Verify credentials are correct
+Check token is included in request headers
+Ensure HTTPS is used (not HTTP)
+Activities not logging:
+
+Verify campaign ID is correct
+Check technique exists in campaign before logging activity
+Ensure JSON payload matches API schema
+Report generation errors:
+
+Confirm campaign has activities to report
+Check file write permissions in output directory
+Validate JSON structure before writing
+Conclusion
+This lab demonstrated how to integrate VECTR into Red Team operations for systematic documentation and reporting. You learned to deploy VECTR, interact with its API using Python, document MITRE ATT&CK techniques, log activities in real-time, and generate comprehensive reports. These skills are essential for professional Red Team operations, enabling better communication with stakeholders, tracking campaign progress, and maintaining detailed records for post-engagement analysis. The automation techniques you developed can be extended to integrate VECTR with other Red Team tools and workflows, creating a comprehensive operation tracking system.
