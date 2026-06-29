@@ -1,0 +1,524 @@
+ Build Attack Infrastructure Using Covenant, Sliver, and C2Matrix
+Objectives
+By the end of this lab, students will be able to:
+
+Install and configure Covenant C2 framework for command and control operations
+Set up Sliver for advanced stealth C2 communications
+Deploy C2Matrix for centralized infrastructure management
+Create a comprehensive red team infrastructure on a single Linux machine
+Understand the operational security considerations for C2 infrastructure
+Generate and manage implants for adversary emulation scenarios
+Prerequisites
+Before starting this lab, students should have:
+
+Basic understanding of Linux command line operations
+Familiarity with networking concepts (TCP/IP, ports, protocols)
+Knowledge of cybersecurity fundamentals
+Understanding of red team operations and adversary emulation
+Basic experience with Docker containers
+Familiarity with web interfaces and REST APIs
+Ready-to-Use Cloud Machines
+Al Nafi provides pre-configured Linux-based cloud machines for this lab. Simply click Start Lab to access your dedicated environment. No need to build your own virtual machine or configure additional infrastructure.
+
+Your lab environment includes:
+
+Ubuntu 22.04 LTS with all necessary dependencies
+Docker and Docker Compose pre-installed
+Required network configurations
+Sufficient resources for running multiple C2 frameworks
+Task 1: Set up Covenant for Command and Control Operations
+Subtask 1.1: Install Prerequisites and Dependencies
+First, we need to ensure all required packages are installed on the system.
+
+# Update system packages
+sudo apt update && sudo apt upgrade -y
+
+# Install required dependencies
+sudo apt install -y git curl wget unzip build-essential
+
+# Install .NET SDK (required for Covenant)
+wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+sudo dpkg -i packages-microsoft-prod.deb
+sudo apt update
+sudo apt install -y dotnet-sdk-6.0
+
+# Verify .NET installation
+dotnet --version
+Subtask 1.2: Clone and Build Covenant
+Download and compile the Covenant C2 framework from the official repository.
+
+# Create working directory
+mkdir -p ~/redteam-lab
+cd ~/redteam-lab
+
+# Clone Covenant repository
+git clone --recurse-submodules https://github.com/cobbr/Covenant.git
+cd Covenant/Covenant
+
+# Build Covenant
+dotnet build
+Subtask 1.3: Configure Covenant Database
+Set up the database configuration for Covenant operations.
+
+# Navigate to Covenant directory
+cd ~/redteam-lab/Covenant/Covenant
+
+# Create appsettings.json configuration
+cat > appsettings.json << 'EOF'
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Data Source=Data/covenant.db"
+  },
+  "CovenantUrl": "https://0.0.0.0:7443",
+  "CovenantBindUrl": "0.0.0.0",
+  "CovenantPort": 7443,
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
+  }
+}
+EOF
+
+# Initialize database
+dotnet ef database update
+Subtask 1.4: Start Covenant Server
+Launch the Covenant C2 server and perform initial setup.
+
+# Start Covenant server
+cd ~/redteam-lab/Covenant/Covenant
+dotnet run &
+
+# Wait for server to start
+sleep 30
+
+# Check if Covenant is running
+netstat -tlnp | grep 7443
+Subtask 1.5: Access Covenant Web Interface
+Open a new terminal and set up access to the Covenant web interface.
+
+# Create initial admin user script
+cat > ~/redteam-lab/setup_covenant_user.sh << 'EOF'
+#!/bin/bash
+echo "Covenant should be accessible at https://localhost:7443"
+echo "Initial setup will require creating an admin user through the web interface"
+echo "Use the following credentials for this lab:"
+echo "Username: admin"
+echo "Password: CovenantAdmin123!"
+echo "Email: admin@redteam.lab"
+EOF
+
+chmod +x ~/redteam-lab/setup_covenant_user.sh
+~/redteam-lab/setup_covenant_user.sh
+Task 2: Configure Sliver for Stealth C2
+Subtask 2.1: Download and Install Sliver
+Install the Sliver C2 framework for advanced stealth operations.
+
+# Create Sliver directory
+mkdir -p ~/redteam-lab/sliver
+cd ~/redteam-lab/sliver
+
+# Download latest Sliver release
+SLIVER_VERSION=$(curl -s https://api.github.com/repos/BishopFox/sliver/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
+wget "https://github.com/BishopFox/sliver/releases/download/${SLIVER_VERSION}/sliver-server_linux" -O sliver-server
+wget "https://github.com/BishopFox/sliver/releases/download/${SLIVER_VERSION}/sliver-client_linux" -O sliver-client
+
+# Make executables
+chmod +x sliver-server sliver-client
+
+# Create symbolic links for easier access
+sudo ln -sf $(pwd)/sliver-server /usr/local/bin/sliver-server
+sudo ln -sf $(pwd)/sliver-client /usr/local/bin/sliver-client
+Subtask 2.2: Initialize Sliver Server
+Set up and configure the Sliver server for C2 operations.
+
+# Initialize Sliver server
+cd ~/redteam-lab/sliver
+./sliver-server unpack --force
+
+# Start Sliver server in daemon mode
+./sliver-server daemon &
+
+# Wait for server initialization
+sleep 15
+
+# Verify Sliver server is running
+ps aux | grep sliver-server
+Subtask 2.3: Configure Sliver Client
+Set up the Sliver client for interaction with the server.
+
+# Generate operator configuration
+cd ~/redteam-lab/sliver
+./sliver-server operator --name redteam-operator --lhost 127.0.0.1 --save redteam-operator.cfg
+
+# Import operator configuration
+./sliver-client import redteam-operator.cfg
+
+# Test client connection
+echo "exit" | ./sliver-client
+Subtask 2.4: Create Sliver HTTP Listener
+Configure HTTP listener for C2 communications.
+
+# Create Sliver commands script
+cat > ~/redteam-lab/sliver/setup_listeners.sh << 'EOF'
+#!/bin/bash
+echo "Starting Sliver client and setting up listeners..."
+
+# Start interactive Sliver session
+./sliver-client << 'SLIVER_COMMANDS'
+http --lport 8080 --domain localhost
+https --lport 8443 --domain localhost --cert /tmp --key /tmp
+jobs
+exit
+SLIVER_COMMANDS
+EOF
+
+chmod +x ~/redteam-lab/sliver/setup_listeners.sh
+Subtask 2.5: Generate Sliver Implants
+Create implants for testing the C2 infrastructure.
+
+# Create implant generation script
+cat > ~/redteam-lab/sliver/generate_implants.sh << 'EOF'
+#!/bin/bash
+echo "Generating Sliver implants..."
+
+./sliver-client << 'SLIVER_COMMANDS'
+generate --http localhost:8080 --os linux --arch amd64 --format executable --save /tmp/
+generate --https localhost:8443 --os linux --arch amd64 --format executable --save /tmp/
+implants
+exit
+SLIVER_COMMANDS
+
+echo "Implants generated in /tmp/ directory"
+ls -la /tmp/*.exe 2>/dev/null || echo "Check /tmp/ for generated implants"
+EOF
+
+chmod +x ~/redteam-lab/sliver/generate_implants.sh
+Task 3: Integrate Infrastructure with C2Matrix
+Subtask 3.1: Install C2Matrix
+Set up C2Matrix for centralized infrastructure management.
+
+# Clone C2Matrix repository
+cd ~/redteam-lab
+git clone https://github.com/Coalfire-Research/C2Matrix.git
+cd C2Matrix
+
+# Install Python dependencies
+sudo apt install -y python3-pip python3-venv
+python3 -m venv c2matrix-env
+source c2matrix-env/bin/activate
+pip install -r requirements.txt
+Subtask 3.2: Configure C2Matrix Database
+Initialize the C2Matrix database and configuration.
+
+# Ensure we're in the C2Matrix environment
+cd ~/redteam-lab/C2Matrix
+source c2matrix-env/bin/activate
+
+# Initialize database
+python manage.py makemigrations
+python manage.py migrate
+
+# Create superuser for C2Matrix
+cat > create_superuser.py << 'EOF'
+import os
+import django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'C2Matrix.settings')
+django.setup()
+
+from django.contrib.auth.models import User
+if not User.objects.filter(username='admin').exists():
+    User.objects.create_superuser('admin', 'admin@c2matrix.lab', 'C2MatrixAdmin123!')
+    print("Superuser created successfully")
+else:
+    print("Superuser already exists")
+EOF
+
+python create_superuser.py
+Subtask 3.3: Configure C2 Framework Integration
+Set up integration between C2Matrix and the deployed frameworks.
+
+# Create C2Matrix configuration
+cd ~/redteam-lab/C2Matrix
+source c2matrix-env/bin/activate
+
+# Create framework configuration script
+cat > configure_frameworks.py << 'EOF'
+import os
+import django
+import json
+from datetime import datetime
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'C2Matrix.settings')
+django.setup()
+
+from c2matrix.models import Framework, Server
+
+# Add Covenant framework
+covenant_framework, created = Framework.objects.get_or_create(
+    name='Covenant',
+    defaults={
+        'description': 'Covenant C2 Framework',
+        'version': '0.7',
+        'documentation_url': 'https://github.com/cobbr/Covenant'
+    }
+)
+
+# Add Covenant server
+covenant_server, created = Server.objects.get_or_create(
+    framework=covenant_framework,
+    name='Covenant-Local',
+    defaults={
+        'host': '127.0.0.1',
+        'port': 7443,
+        'protocol': 'https',
+        'status': 'active',
+        'description': 'Local Covenant C2 Server'
+    }
+)
+
+# Add Sliver framework
+sliver_framework, created = Framework.objects.get_or_create(
+    name='Sliver',
+    defaults={
+        'description': 'Sliver C2 Framework',
+        'version': '1.5',
+        'documentation_url': 'https://github.com/BishopFox/sliver'
+    }
+)
+
+# Add Sliver server
+sliver_server, created = Server.objects.get_or_create(
+    framework=sliver_framework,
+    name='Sliver-Local',
+    defaults={
+        'host': '127.0.0.1',
+        'port': 31337,
+        'protocol': 'grpc',
+        'status': 'active',
+        'description': 'Local Sliver C2 Server'
+    }
+)
+
+print("Framework configuration completed")
+print(f"Covenant Framework ID: {covenant_framework.id}")
+print(f"Sliver Framework ID: {sliver_framework.id}")
+EOF
+
+python configure_frameworks.py
+Subtask 3.4: Start C2Matrix Web Interface
+Launch the C2Matrix web interface for infrastructure management.
+
+# Start C2Matrix development server
+cd ~/redteam-lab/C2Matrix
+source c2matrix-env/bin/activate
+
+# Run C2Matrix server
+python manage.py runserver 0.0.0.0:8000 &
+
+# Wait for server to start
+sleep 10
+
+# Verify C2Matrix is running
+netstat -tlnp | grep 8000
+Subtask 3.5: Create Infrastructure Management Dashboard
+Set up a comprehensive dashboard for monitoring all C2 infrastructure.
+
+# Create dashboard monitoring script
+cat > ~/redteam-lab/infrastructure_status.sh << 'EOF'
+#!/bin/bash
+
+echo "=== Red Team Infrastructure Status ==="
+echo "Date: $(date)"
+echo ""
+
+echo "=== Covenant Status ==="
+if netstat -tlnp | grep -q 7443; then
+    echo "✓ Covenant Server: RUNNING (Port 7443)"
+    echo "  URL: https://localhost:7443"
+else
+    echo "✗ Covenant Server: NOT RUNNING"
+fi
+echo ""
+
+echo "=== Sliver Status ==="
+if pgrep -f sliver-server > /dev/null; then
+    echo "✓ Sliver Server: RUNNING"
+    echo "  gRPC Port: 31337"
+    if netstat -tlnp | grep -q 8080; then
+        echo "  ✓ HTTP Listener: Port 8080"
+    fi
+    if netstat -tlnp | grep -q 8443; then
+        echo "  ✓ HTTPS Listener: Port 8443"
+    fi
+else
+    echo "✗ Sliver Server: NOT RUNNING"
+fi
+echo ""
+
+echo "=== C2Matrix Status ==="
+if netstat -tlnp | grep -q 8000; then
+    echo "✓ C2Matrix Dashboard: RUNNING (Port 8000)"
+    echo "  URL: http://localhost:8000"
+else
+    echo "✗ C2Matrix Dashboard: NOT RUNNING"
+fi
+echo ""
+
+echo "=== System Resources ==="
+echo "CPU Usage: $(top -bn1 | grep "Cpu(s)" | awk '{print $2}' | cut -d'%' -f1)%"
+echo "Memory Usage: $(free | grep Mem | awk '{printf("%.1f%%", $3/$2 * 100.0)}')"
+echo "Disk Usage: $(df -h / | awk 'NR==2{printf "%s", $5}')"
+echo ""
+
+echo "=== Active Network Connections ==="
+echo "Listening Ports:"
+netstat -tlnp | grep -E "(7443|8000|8080|8443|31337)" | while read line; do
+    echo "  $line"
+done
+EOF
+
+chmod +x ~/redteam-lab/infrastructure_status.sh
+Task 4: Verification and Testing
+Subtask 4.1: Verify All Services
+Test that all C2 infrastructure components are operational.
+
+# Run infrastructure status check
+~/redteam-lab/infrastructure_status.sh
+
+# Test Covenant API endpoint
+curl -k -s https://localhost:7443/api/users 2>/dev/null && echo "Covenant API accessible" || echo "Covenant API not accessible"
+
+# Test C2Matrix web interface
+curl -s http://localhost:8000 | grep -q "C2Matrix" && echo "C2Matrix web interface accessible" || echo "C2Matrix web interface not accessible"
+Subtask 4.2: Create Operational Scripts
+Generate scripts for common operational tasks.
+
+# Create start-all script
+cat > ~/redteam-lab/start_infrastructure.sh << 'EOF'
+#!/bin/bash
+echo "Starting Red Team Infrastructure..."
+
+# Start Covenant
+cd ~/redteam-lab/Covenant/Covenant
+nohup dotnet run > covenant.log 2>&1 &
+echo "Covenant starting..."
+
+# Start Sliver
+cd ~/redteam-lab/sliver
+nohup ./sliver-server daemon > sliver.log 2>&1 &
+echo "Sliver starting..."
+
+# Start C2Matrix
+cd ~/redteam-lab/C2Matrix
+source c2matrix-env/bin/activate
+nohup python manage.py runserver 0.0.0.0:8000 > c2matrix.log 2>&1 &
+echo "C2Matrix starting..."
+
+sleep 15
+echo "Infrastructure startup complete. Run ./infrastructure_status.sh to verify."
+EOF
+
+chmod +x ~/redteam-lab/start_infrastructure.sh
+
+# Create stop-all script
+cat > ~/redteam-lab/stop_infrastructure.sh << 'EOF'
+#!/bin/bash
+echo "Stopping Red Team Infrastructure..."
+
+# Stop processes
+pkill -f "dotnet run"
+pkill -f "sliver-server"
+pkill -f "manage.py runserver"
+
+echo "All infrastructure services stopped."
+EOF
+
+chmod +x ~/redteam-lab/stop_infrastructure.sh
+Subtask 4.3: Document Access Information
+Create a reference document with all access information.
+
+# Create access information document
+cat > ~/redteam-lab/ACCESS_INFO.md << 'EOF'
+# Red Team Infrastructure Access Information
+
+## Covenant C2 Framework
+- **URL**: https://localhost:7443
+- **Username**: admin
+- **Password**: CovenantAdmin123!
+- **Email**: admin@redteam.lab
+
+## Sliver C2 Framework
+- **Server**: Running on localhost
+- **Client**: Use `./sliver-client` from ~/redteam-lab/sliver/
+- **HTTP Listener**: Port 8080
+- **HTTPS Listener**: Port 8443
+
+## C2Matrix Dashboard
+- **URL**: http://localhost:8000
+- **Username**: admin
+- **Password**: C2MatrixAdmin123!
+
+## Useful Commands
+- Check status: `~/redteam-lab/infrastructure_status.sh`
+- Start all: `~/redteam-lab/start_infrastructure.sh`
+- Stop all: `~/redteam-lab/stop_infrastructure.sh`
+
+## Log Files
+- Covenant: ~/redteam-lab/Covenant/Covenant/covenant.log
+- Sliver: ~/redteam-lab/sliver/sliver.log
+- C2Matrix: ~/redteam-lab/C2Matrix/c2matrix.log
+EOF
+
+echo "Access information saved to ~/redteam-lab/ACCESS_INFO.md"
+Troubleshooting Tips
+Common Issues and Solutions
+Issue: Covenant fails to start with database errors Solution:
+
+cd ~/redteam-lab/Covenant/Covenant
+rm -rf Data/covenant.db
+dotnet ef database update
+Issue: Sliver client cannot connect to server Solution:
+
+cd ~/redteam-lab/sliver
+./sliver-server operator --name redteam-operator --lhost 127.0.0.1 --save redteam-operator.cfg
+./sliver-client import redteam-operator.cfg
+Issue: C2Matrix shows database errors Solution:
+
+cd ~/redteam-lab/C2Matrix
+source c2matrix-env/bin/activate
+python manage.py makemigrations
+python manage.py migrate
+Issue: Port conflicts Solution: Check for conflicting services and modify port configurations in respective config files.
+
+Performance Optimization
+Monitor system resources regularly using the status script
+Adjust listener configurations based on operational requirements
+Use log rotation for long-running operations
+Consider firewall rules for production deployments
+Conclusion
+In this comprehensive lab, you have successfully built a complete red team infrastructure using three powerful open-source C2 frameworks:
+
+Key Accomplishments:
+
+Covenant C2: Deployed a .NET-based C2 framework with web interface for interactive operations
+Sliver C2: Configured an advanced Go-based C2 framework with stealth capabilities and multiple communication protocols
+C2Matrix: Integrated a centralized management dashboard for monitoring and coordinating multiple C2 infrastructures
+Technical Skills Developed:
+
+C2 framework deployment and configuration
+Infrastructure integration and management
+Operational security considerations for red team operations
+Automation scripting for infrastructure management
+Multi-framework coordination and monitoring
+Real-World Applications: This infrastructure setup provides a foundation for:
+
+Adversary Emulation: Simulating real-world attack scenarios
+Red Team Operations: Conducting authorized penetration testing
+Security Research: Testing defensive capabilities and detection mechanisms
+Training Environments: Providing hands-on experience with professional-grade tools
+The integrated infrastructure you've built demonstrates enterprise-level red team capabilities while maintaining operational security and providing comprehensive management interfaces. This setup serves as a practical foundation for advanced cybersecurity operations and continuous learning in the field of offensive security.
+
+Next Steps: Consider exploring advanced features of each framework, implementing additional operational security measures, and integrating with other security tools to create an even more comprehensive red team infrastructure.
