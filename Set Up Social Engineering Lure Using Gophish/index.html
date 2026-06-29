@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .header { background-color: #0078d4; color: white; padding: 15px; }
+        .content { padding: 20px; }
+        .button { background-color: #0078d4; color: white; padding: 10px 20px; 
+                  text-decoration: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>IT Security Department</h2>
+    </div>
+    <div class="content">
+        <p>Dear {{.FirstName}} {{.LastName}},</p>
+        <p>We have detected unusual activity on your account. Please verify your credentials immediately.</p>
+        <p><a href="{{.URL}}" class="button">Verify Account</a></p>
+        <p>This must be completed within 24 hours.</p>
+        <p>IT Security Team</p>
+    </div>
+</body>
+</html>
