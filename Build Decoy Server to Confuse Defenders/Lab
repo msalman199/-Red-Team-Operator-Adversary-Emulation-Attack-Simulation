@@ -1,0 +1,709 @@
+Build Decoy Server to Confuse Defenders
+Objectives
+By the end of this lab, students will be able to:
+
+Deploy a realistic decoy server that mimics legitimate business services
+Implement traffic obfuscation techniques to blend malicious activity with normal traffic
+Create automated scripts for decoy server management and monitoring
+Analyze log patterns to understand how decoys mislead defensive teams
+Apply evasion techniques using decoy infrastructure in red team operations
+Prerequisites
+Before starting this lab, students should have:
+
+Basic Linux command line proficiency
+Understanding of networking concepts (TCP/IP, HTTP, ports)
+Fundamental Python programming skills
+Familiarity with web servers and system logs
+Lab Environment
+Al Nafi provides Linux-based cloud machines for this lab. Click Start Lab to access your pre-configured environment.
+
+Your lab machine includes:
+
+Ubuntu 22.04 LTS
+Python 3.10+ with pip
+Required networking tools (curl, netcat)
+Text editors (nano, vim)
+Pre-installed dependencies
+Task 1: Deploy a Basic Decoy Web Server
+Step 1.1: Create Project Structure
+Set up the directory structure for your decoy server project:
+
+# Create main project directory
+mkdir -p ~/decoy-server-lab/{web-content,logs,scripts,configs}
+cd ~/decoy-server-lab
+
+# Initialize log file
+touch logs/decoy-server.log
+Step 1.2: Install Required Dependencies
+# Update package list
+sudo apt update
+
+# Install required packages
+sudo apt install -y python3-pip nginx-light curl netcat-openbsd
+
+# Install Python packages
+pip3 install flask requests psutil
+Step 1.3: Create Realistic Web Content
+Create a convincing business website homepage:
+
+cat > web-content/index.html << 'EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechCorp Solutions - Enterprise IT Services</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f4; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; }
+        .header { background: #2c3e50; color: white; padding: 20px; text-align: center; }
+        .nav { background: #34495e; padding: 10px; }
+        .nav a { color: white; text-decoration: none; margin: 0 15px; }
+        .content { line-height: 1.6; padding: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>TechCorp Solutions</h1>
+            <p>Your Trusted Enterprise IT Partner</p>
+        </div>
+        <div class="nav">
+            <a href="#services">Services</a>
+            <a href="#about">About</a>
+            <a href="/admin">Admin Portal</a>
+        </div>
+        <div class="content">
+            <h2>Welcome to TechCorp Solutions</h2>
+            <p>We provide comprehensive IT solutions for enterprise clients worldwide.</p>
+            <h3>Client Portal Access</h3>
+            <form action="/login" method="post">
+                <input type="text" placeholder="Username" name="username">
+                <input type="password" placeholder="Password" name="password">
+                <input type="submit" value="Login">
+            </form>
+        </div>
+    </div>
+</body>
+</html>
+EOF
+Create an admin login page:
+
+cat > web-content/admin.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TechCorp Admin Portal</title>
+    <style>
+        body { background: #2c3e50; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .login-box { background: white; color: #333; padding: 40px; border-radius: 8px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; }
+        button { width: 100%; padding: 12px; background: #e74c3c; color: white; border: none; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h2>Administrator Access</h2>
+        <form action="/admin-auth" method="post">
+            <input type="text" placeholder="Admin Username" name="admin_user" required>
+            <input type="password" placeholder="Admin Password" name="admin_pass" required>
+            <button type="submit">Access System</button>
+        </form>
+        <p style="font-size: 12px; color: #666;">Authorized personnel only. All access attempts are logged.</p>
+    </div>
+</body>
+</html>
+EOF
+Step 1.4: Create Decoy Server Application
+Create the main Flask application (students will complete the implementation):
+
+cat > scripts/decoy_server.py << 'EOF'
+#!/usr/bin/env python3
+
+import flask
+from flask import Flask, request, jsonify
+import logging
+import datetime
+import random
+import time
+
+app = Flask(__name__)
+
+# TODO: Configure logging to write to both file and console
+# Hint: Use logging.basicConfig with FileHandler and StreamHandler
+
+# Global variables for tracking
+visitor_count = 0
+login_attempts = []
+
+def log_visitor(request):
+    """
+    Log visitor information in a realistic format.
+    
+    Args:
+        request: Flask request object
+    
+    Returns:
+        Dictionary with visitor information
+    """
+    global visitor_count
+    visitor_count += 1
+    
+    # TODO: Create visitor_info dictionary with:
+    # - timestamp (use datetime.datetime.now().isoformat())
+    # - ip address (request.remote_addr)
+    # - user_agent (request.headers.get('User-Agent'))
+    # - method (request.method)
+    # - path (request.path)
+    # - visitor_id
+    
+    # TODO: Log the visitor information
+    
+    pass
+
+@app.route('/')
+def index():
+    """Serve the main homepage"""
+    # TODO: Log the visitor
+    # TODO: Read and return web-content/index.html
+    pass
+
+@app.route('/admin')
+def admin():
+    """Serve the admin login page"""
+    # TODO: Log the visitor
+    # TODO: Read and return web-content/admin.html
+    pass
+
+@app.route('/login', methods=['POST'])
+def login():
+    """
+    Handle login attempts and log credentials.
+    Always returns failure but logs the attempt.
+    """
+    # TODO: Extract username and password from request.form
+    # TODO: Create login_attempt dictionary with timestamp, ip, credentials
+    # TODO: Append to login_attempts list
+    # TODO: Log the attempt with logging.warning()
+    # TODO: Simulate processing time with time.sleep(random.uniform(1.0, 3.0))
+    # TODO: Return HTML response indicating login failure
+    pass
+
+@app.route('/admin-auth', methods=['POST'])
+def admin_auth():
+    """
+    Handle admin login attempts with higher severity logging.
+    """
+    # TODO: Similar to login() but use logging.critical()
+    # TODO: Longer processing time (2-5 seconds)
+    pass
+
+@app.route('/api/status')
+def api_status():
+    """
+    Fake API endpoint that returns realistic system status.
+    """
+    # TODO: Create status_data dictionary with:
+    # - status: 'operational'
+    # - version: '2.1.4'
+    # - timestamp
+    # - services dict (web_server, database, backup_service all 'running')
+    # - system_stats (cpu_usage, memory_usage, disk_usage with random values)
+    
+    # TODO: Return jsonify(status_data)
+    pass
+
+@app.route('/robots.txt')
+def robots():
+    """Return realistic robots.txt"""
+    return '''User-agent: *
+Disallow: /admin/
+Disallow: /api/
+Allow: /
+'''
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint"""
+    # TODO: Return JSON with status, timestamp, and fake uptime
+    pass
+
+if __name__ == '__main__':
+    # TODO: Configure logging
+    # TODO: Start the Flask app on 0.0.0.0:8080
+    pass
+EOF
+Step 1.5: Test the Decoy Server
+# Make script executable
+chmod +x scripts/decoy_server.py
+
+# Start the server (students will complete the implementation first)
+python3 scripts/decoy_server.py &
+DECOY_PID=$!
+echo $DECOY_PID > decoy_server.pid
+
+# Wait for server to start
+sleep 3
+
+# Test endpoints
+curl http://localhost:8080/
+curl http://localhost:8080/api/status
+curl http://localhost:8080/health
+Task 2: Implement Traffic Obfuscation
+Step 2.1: Create Traffic Obfuscation Module
+Create a module that generates realistic background traffic:
+
+cat > scripts/traffic_obfuscator.py << 'EOF'
+#!/usr/bin/env python3
+
+import requests
+import random
+import time
+import threading
+import logging
+
+class TrafficObfuscator:
+    def __init__(self, target_host='localhost', target_port=8080):
+        self.target_host = target_host
+        self.target_port = target_port
+        self.base_url = f"http://{target_host}:{target_port}"
+        self.running = False
+        
+        # TODO: Configure logging
+        
+        # Realistic user agents
+        self.user_agents = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36'
+        ]
+        
+        self.legitimate_paths = ['/', '/api/status', '/health', '/robots.txt']
+        self.suspicious_paths = ['/admin', '/wp-admin/', '/.env', '/config.php']
+
+    def generate_legitimate_traffic(self):
+        """
+        Generate normal user traffic patterns.
+        Should run in a loop while self.running is True.
+        """
+        while self.running:
+            try:
+                # TODO: Sleep for random delay (10-60 seconds)
+                # TODO: Choose random legitimate path
+                # TODO: Create headers with random user agent
+                # TODO: Make GET request to the URL
+                # TODO: Log the request
+                pass
+            except Exception as e:
+                logging.error(f"Error generating legitimate traffic: {e}")
+
+    def generate_suspicious_traffic(self):
+        """
+        Generate suspicious traffic that looks like reconnaissance.
+        Less frequent than legitimate traffic (2-5 minutes between requests).
+        """
+        # TODO: Implement similar to generate_legitimate_traffic()
+        # TODO: Use suspicious_paths instead
+        # TODO: Use different user agents (curl, wget, python-requests)
+        # TODO: Log with logging.warning()
+        pass
+
+    def generate_failed_login_attempts(self):
+        """
+        Generate realistic failed login attempts.
+        Should attempt logins every 5-15 minutes.
+        """
+        while self.running:
+            try:
+                # TODO: Sleep for random delay (300-900 seconds)
+                # TODO: Choose random username and password from common lists
+                # TODO: POST to /login endpoint
+                # TODO: Log the attempt
+                pass
+            except Exception as e:
+                logging.error(f"Error generating login attempts: {e}")
+
+    def start_obfuscation(self):
+        """
+        Start all obfuscation activities in separate threads.
+        
+        Returns:
+            List of thread objects
+        """
+        self.running = True
+        
+        # TODO: Create threads for:
+        # - generate_legitimate_traffic
+        # - generate_suspicious_traffic
+        # - generate_failed_login_attempts
+        
+        # TODO: Start all threads (set daemon=True)
+        # TODO: Return list of threads
+        pass
+
+    def stop_obfuscation(self):
+        """Stop all obfuscation activities"""
+        self.running = False
+
+if __name__ == '__main__':
+    # TODO: Create TrafficObfuscator instance
+    # TODO: Start obfuscation
+    # TODO: Keep main thread alive with while loop
+    # TODO: Handle KeyboardInterrupt to stop gracefully
+    pass
+EOF
+Step 2.2: Create Log Analysis Script
+Create a script to analyze the generated logs:
+
+cat > scripts/analyze_logs.py << 'EOF'
+#!/usr/bin/env python3
+
+import re
+from collections import Counter
+from datetime import datetime
+
+def analyze_decoy_logs(log_file):
+    """
+    Analyze decoy server logs to identify patterns.
+    
+    Args:
+        log_file: Path to the log file
+    
+    Returns:
+        Dictionary with analysis results
+    """
+    # TODO: Read the log file
+    # TODO: Count total requests
+    # TODO: Identify unique IP addresses
+    # TODO: Count login attempts
+    # TODO: Count admin access attempts
+    # TODO: Identify most common user agents
+    # TODO: Calculate requests per hour
+    
+    # TODO: Return dictionary with all statistics
+    pass
+
+def identify_suspicious_patterns(log_file):
+    """
+    Identify suspicious patterns in the logs.
+    
+    Args:
+        log_file: Path to the log file
+    
+    Returns:
+        List of suspicious activities
+    """
+    # TODO: Look for patterns like:
+    # - Multiple failed login attempts from same IP
+    # - Scanning behavior (many different paths)
+    # - Suspicious user agents
+    # - Rapid sequential requests
+    
+    pass
+
+if __name__ == '__main__':
+    # TODO: Analyze logs/decoy-server.log
+    # TODO: Print statistics
+    # TODO: Print suspicious patterns
+    pass
+EOF
+Step 2.3: Test Traffic Obfuscation
+# Make scripts executable
+chmod +x scripts/traffic_obfuscator.py
+chmod +x scripts/analyze_logs.py
+
+# Start traffic obfuscation (in background)
+python3 scripts/traffic_obfuscator.py &
+OBFUSCATOR_PID=$!
+
+# Let it run for a few minutes
+echo "Generating obfuscated traffic for 3 minutes..."
+sleep 180
+
+# Stop the obfuscator
+kill $OBFUSCATOR_PID
+
+# Analyze the logs
+python3 scripts/analyze_logs.py
+Task 3: Create Automated Deployment Script
+Step 3.1: Build Deployment Automation
+Create a script that automates the entire decoy server deployment:
+
+cat > scripts/deploy_decoy.py << 'EOF'
+#!/usr/bin/env python3
+
+import subprocess
+import time
+import os
+import signal
+import sys
+
+class DecoyDeployment:
+    def __init__(self):
+        self.decoy_pid = None
+        self.obfuscator_pid = None
+        self.base_dir = '/home/ubuntu/decoy-server-lab'
+    
+    def check_dependencies(self):
+        """
+        Check if all required dependencies are installed.
+        
+        Returns:
+            Boolean indicating if all dependencies are present
+        """
+        # TODO: Check for Python packages (flask, requests, psutil)
+        # TODO: Check for system tools (curl, netcat)
+        # TODO: Return True if all present, False otherwise
+        pass
+    
+    def start_decoy_server(self):
+        """
+        Start the decoy server in the background.
+        
+        Returns:
+            Process ID of the started server
+        """
+        # TODO: Use subprocess.Popen to start decoy_server.py
+        # TODO: Store PID in self.decoy_pid
+        # TODO: Write PID to file for later reference
+        # TODO: Wait a few seconds to ensure server starts
+        # TODO: Return the PID
+        pass
+    
+    def start_traffic_obfuscation(self):
+        """
+        Start the traffic obfuscation in the background.
+        
+        Returns:
+            Process ID of the obfuscator
+        """
+        # TODO: Similar to start_decoy_server()
+        # TODO: Start traffic_obfuscator.py
+        pass
+    
+    def stop_all_services(self):
+        """Stop all running decoy services"""
+        # TODO: Send SIGTERM to decoy_pid
+        # TODO: Send SIGTERM to obfuscator_pid
+        # TODO: Wait for processes to terminate
+        # TODO: Clean up PID files
+        pass
+    
+    def deploy(self):
+        """
+        Full deployment process.
+        """
+        print("[*] Starting decoy server deployment...")
+        
+        # TODO: Check dependencies
+        # TODO: Start decoy server
+        # TODO: Start traffic obfuscation
+        # TODO: Print status information
+        # TODO: Set up signal handler for graceful shutdown
+        
+        print("[+] Decoy server deployed successfully")
+        print("[*] Press Ctrl+C to stop all services")
+        
+        # TODO: Keep script running
+        pass
+
+if __name__ == '__main__':
+    # TODO: Create DecoyDeployment instance
+    # TODO: Call deploy()
+    # TODO: Handle KeyboardInterrupt for cleanup
+    pass
+EOF
+Step 3.2: Create Configuration File
+cat > configs/decoy_config.json << 'EOF'
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "server_header": "Apache/2.4.41 (Ubuntu)"
+  },
+  "obfuscation": {
+    "legitimate_traffic_interval": [10, 60],
+    "suspicious_traffic_interval": [120, 300],
+    "login_attempt_interval": [300, 900]
+  },
+  "logging": {
+    "level": "INFO",
+    "log_file": "logs/decoy-server.log",
+    "max_size_mb": 100
+  }
+}
+EOF
+Step 3.3: Test Full Deployment
+# Make deployment script executable
+chmod +x scripts/deploy_decoy.py
+
+# Run deployment
+python3 scripts/deploy_decoy.py
+
+# In another terminal, verify services are running
+ps aux | grep python3
+netstat -tlnp | grep 8080
+
+# Test the deployment
+curl http://localhost:8080/
+curl http://localhost:8080/api/status
+Task 4: Analyze Decoy Effectiveness
+Step 4.1: Monitor Decoy Activity
+Create a monitoring script:
+
+cat > scripts/monitor_decoy.py << 'EOF'
+#!/usr/bin/env python3
+
+import time
+import subprocess
+import json
+from datetime import datetime
+
+def monitor_connections():
+    """
+    Monitor active connections to the decoy server.
+    
+    Returns:
+        List of active connections
+    """
+    # TODO: Use netstat or ss to get connections on port 8080
+    # TODO: Parse the output
+    # TODO: Return list of connection details
+    pass
+
+def monitor_log_activity():
+    """
+    Monitor log file for new entries.
+    """
+    # TODO: Use tail -f or similar to watch log file
+    # TODO: Parse and display new entries in real-time
+    pass
+
+def generate_report():
+    """
+    Generate a summary report of decoy activity.
+    
+    Returns:
+        Dictionary with report data
+    """
+    # TODO: Analyze logs for the past hour
+    # TODO: Count total requests, unique IPs, login attempts
+    # TODO: Identify most active time periods
+    # TODO: Return report dictionary
+    pass
+
+if __name__ == '__main__':
+    # TODO: Implement monitoring loop
+    # TODO: Display real-time statistics
+    # TODO: Generate periodic reports
+    pass
+EOF
+Step 4.2: Create Effectiveness Metrics
+cat > scripts/effectiveness_metrics.py << 'EOF'
+#!/usr/bin/env python3
+
+def calculate_believability_score(log_file):
+    """
+    Calculate how believable the decoy appears based on traffic patterns.
+    
+    Args:
+        log_file: Path to log file
+    
+    Returns:
+        Score from 0-100
+    """
+    # TODO: Analyze traffic patterns
+    # TODO: Check for realistic timing between requests
+    # TODO: Verify diversity of user agents
+    # TODO: Check for appropriate mix of legitimate/suspicious traffic
+    # TODO: Calculate and return score
+    pass
+
+def measure_confusion_factor(log_file):
+    """
+    Measure how well the decoy confuses attackers/defenders.
+    
+    Args:
+        log_file: Path to log file
+    
+    Returns:
+        Dictionary with confusion metrics
+    """
+    # TODO: Count honeypot indicators that were hidden
+    # TODO: Measure response time consistency
+    # TODO: Check for realistic error messages
+    # TODO: Return metrics dictionary
+    pass
+
+if __name__ == '__main__':
+    # TODO: Calculate metrics
+    # TODO: Display results
+    pass
+EOF
+Step 4.3: Run Analysis
+# Make scripts executable
+chmod +x scripts/monitor_decoy.py
+chmod +x scripts/effectiveness_metrics.py
+
+# Monitor in real-time (run in separate terminal)
+python3 scripts/monitor_decoy.py
+
+# Calculate effectiveness metrics
+python3 scripts/effectiveness_metrics.py
+Expected Outcomes
+After completing this lab, students should have:
+
+A fully functional decoy server mimicking a legitimate business website
+Traffic obfuscation generating realistic background activity
+Automated deployment and management scripts
+Log analysis tools to measure decoy effectiveness
+Understanding of how decoys mislead defensive teams
+Key files created:
+
+scripts/decoy_server.py - Main decoy server application
+scripts/traffic_obfuscator.py - Traffic generation module
+scripts/deploy_decoy.py - Automated deployment
+scripts/analyze_logs.py - Log analysis tool
+web-content/ - Realistic web content
+Troubleshooting Tips
+Server won't start:
+
+Check if port 8080 is already in use: netstat -tlnp | grep 8080
+Verify Python dependencies: pip3 list | grep -E "flask|requests"
+Check logs for errors: tail -f logs/decoy-server.log
+No traffic being generated:
+
+Verify traffic obfuscator is running: ps aux | grep traffic_obfuscator
+Check network connectivity: curl http://localhost:8080/health
+Review obfuscator logs for errors
+Logs not being created:
+
+Ensure logs directory exists and is writable
+Check file permissions: ls -la logs/
+Verify logging configuration in scripts
+Conclusion
+This lab demonstrated how to build and deploy decoy servers for red team operations. Students learned to:
+
+Create realistic decoy services that mimic legitimate infrastructure
+Implement traffic obfuscation to blend malicious activity with normal traffic
+Automate decoy deployment and management
+Analyze effectiveness of deception techniques
+Decoy servers are valuable for:
+
+Confusing defensive teams during red team engagements
+Creating noise to hide real attack infrastructure
+Testing defensive detection capabilities
+Simulating realistic network environments
+Key Takeaways:
+
+Realism is critical - decoys must behave like legitimate services
+Traffic patterns matter more than static content
+Automation enables rapid deployment and management
+Continuous monitoring helps improve decoy effectiveness
+Next Steps:
+
+Experiment with different service types (SSH, FTP, databases)
+Implement more sophisticated traffic patterns
+Add honeypot features to capture attacker techniques
+Integrate with C2 infrastructure for advanced operations
+Remember: Always use these techniques ethically and only in authorized environments.
