@@ -1,0 +1,563 @@
+Deploy Encrypted Listener with HTTPS Tunneling
+Objectives
+By the end of this lab, students will be able to:
+
+Configure Caddy web server for HTTPS reverse proxy tunneling
+Implement encrypted C2 listener with Python
+Deploy and manage secure communication channels
+Test and validate encrypted traffic flows
+Troubleshoot common HTTPS tunneling issues
+Prerequisites
+Basic Linux command line proficiency
+Understanding of TCP/IP and HTTP/HTTPS protocols
+Fundamental Python programming skills
+Knowledge of SSL/TLS concepts
+Familiarity with client-server architecture
+Lab Environment
+Al Nafi provides pre-configured Ubuntu 22.04 LTS cloud machines. Click Start Lab to access your environment with:
+
+Ubuntu 22.04 LTS with root access
+Python 3.10+ with pip
+Network tools pre-installed
+Internet connectivity
+Task 1: Install and Configure Caddy Web Server
+Step 1.1: Install Caddy
+# Update system and install dependencies
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget gnupg2
+
+# Add Caddy repository
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | \
+  sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | \
+  sudo tee /etc/apt/sources.list.d/caddy-stable.list
+
+# Install Caddy
+sudo apt update
+sudo apt install caddy -y
+
+# Verify installation
+caddy version
+Step 1.2: Create Directory Structure
+# Create working directories
+mkdir -p ~/c2-lab/{config,scripts,logs}
+cd ~/c2-lab
+
+# Add test domain to hosts file
+echo "127.0.0.1 c2.local" | sudo tee -a /etc/hosts
+Step 1.3: Configure Caddyfile
+cat > config/Caddyfile << 'EOF'
+localhost:8443 {
+    tls internal
+    reverse_proxy localhost:8080
+    
+    log {
+        output file logs/caddy.log
+        format json
+    }
+    
+    header {
+        -Server
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+    }
+}
+
+c2.local:8443 {
+    tls internal
+    reverse_proxy localhost:8080
+    
+    log {
+        output file logs/caddy-domain.log
+    }
+}
+EOF
+
+# Validate configuration
+caddy validate --config config/Caddyfile
+Task 2: Create Encrypted C2 Listener
+Step 2.1: Install Python Dependencies
+# Install required packages
+pip3 install cryptography requests urllib3
+
+# Verify installation
+python3 -c "from cryptography.fernet import Fernet; print('Success')"
+Step 2.2: Implement Encrypted Listener (Starter Template)
+Create scripts/encrypted_listener.py:
+
+#!/usr/bin/env python3
+"""
+Encrypted C2 Listener - Student Implementation
+Complete the TODO sections to create a functional listener
+"""
+
+import socket
+import threading
+import logging
+import base64
+from datetime import datetime
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+class EncryptedListener:
+    def __init__(self, host='localhost', port=8080, password='RedTeamTraining2024'):
+        self.host = host
+        self.port = port
+        self.password = password.encode()
+        self.clients = {}
+        self.running = False
+        self.setup_encryption()
+        self.setup_logging()
+        
+    def setup_encryption(self):
+        """Initialize Fernet encryption with PBKDF2 key derivation"""
+        # TODO: Create salt (use b'salt_for_lab_demo' for consistency)
+        # TODO: Initialize PBKDF2HMAC with SHA256, 32-byte key, 100000 iterations
+        # TODO: Derive key from password
+        # TODO: Create Fernet cipher with base64-encoded key
+        pass
+        
+    def setup_logging(self):
+        """Configure logging to file and console"""
+        # TODO: Configure logging with INFO level
+        # TODO: Add FileHandler for logs/listener.log
+        # TODO: Add StreamHandler for console output
+        pass
+        
+    def encrypt_data(self, data):
+        """
+        Encrypt data using Fernet cipher
+        
+        Args:
+            data: String or bytes to encrypt
+            
+        Returns:
+            Encrypted bytes
+        """
+        # TODO: Convert string to bytes if needed
+        # TODO: Encrypt using self.cipher
+        # TODO: Return encrypted data
+        pass
+        
+    def decrypt_data(self, encrypted_data):
+        """
+        Decrypt data using Fernet cipher
+        
+        Args:
+            encrypted_data: Encrypted bytes
+            
+        Returns:
+            Decrypted string or None on failure
+        """
+        # TODO: Decrypt using self.cipher
+        # TODO: Decode bytes to string
+        # TODO: Handle exceptions and return None on failure
+        pass
+        
+    def handle_client(self, client_socket, client_address):
+        """
+        Handle individual client connection
+        
+        Args:
+            client_socket: Connected socket object
+            client_address: Tuple of (host, port)
+        """
+        client_id = f"{client_address[0]}:{client_address[1]}"
+        
+        # TODO: Store client info in self.clients dictionary
+        # TODO: Log connection
+        
+        try:
+            while self.running:
+                # TODO: Send encrypted heartbeat message
+                # TODO: Set socket timeout to 30 seconds
+                # TODO: Receive and decrypt client response
+                # TODO: Update client last_seen timestamp
+                # TODO: Sleep for 10 seconds between heartbeats
+                pass
+                
+        except Exception as e:
+            self.logger.error(f"Error handling client {client_id}: {e}")
+        finally:
+            # TODO: Close socket and remove client from dictionary
+            pass
+            
+    def start_listener(self):
+        """Start the main listener server"""
+        self.running = True
+        # TODO: Create TCP socket
+        # TODO: Set SO_REUSEADDR option
+        # TODO: Bind to host and port
+        # TODO: Listen for connections
+        # TODO: Accept connections in loop
+        # TODO: Create thread for each client using handle_client
+        pass
+        
+    def stop_listener(self):
+        """Stop the listener gracefully"""
+        # TODO: Set self.running to False
+        # TODO: Log shutdown message
+        pass
+
+def main():
+    # TODO: Create EncryptedListener instance
+    # TODO: Start listener
+    # TODO: Handle KeyboardInterrupt for graceful shutdown
+    pass
+
+if __name__ == "__main__":
+    main()
+Make executable:
+
+chmod +x scripts/encrypted_listener.py
+Step 2.3: Create Test Client (Starter Template)
+Create scripts/test_client.py:
+
+#!/usr/bin/env python3
+"""
+Test Client - Student Implementation
+Complete the TODO sections to test the listener
+"""
+
+import socket
+import base64
+import time
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+class TestClient:
+    def __init__(self, host='localhost', port=8080, password='RedTeamTraining2024'):
+        self.host = host
+        self.port = port
+        self.password = password.encode()
+        self.setup_encryption()
+        
+    def setup_encryption(self):
+        """Initialize encryption matching server configuration"""
+        # TODO: Use same salt as server (b'salt_for_lab_demo')
+        # TODO: Initialize PBKDF2HMAC with matching parameters
+        # TODO: Derive key and create Fernet cipher
+        pass
+        
+    def encrypt_data(self, data):
+        """Encrypt data for transmission"""
+        # TODO: Implement encryption
+        pass
+        
+    def decrypt_data(self, encrypted_data):
+        """Decrypt received data"""
+        # TODO: Implement decryption with error handling
+        pass
+        
+    def connect_and_test(self):
+        """Connect to listener and test communication"""
+        # TODO: Create socket and connect to server
+        # TODO: Loop for 60 seconds
+        # TODO: Receive heartbeat, decrypt, and print
+        # TODO: Send encrypted response "CLIENT_ALIVE"
+        # TODO: Handle exceptions and close socket
+        pass
+
+if __name__ == "__main__":
+    # TODO: Create TestClient instance and run test
+    pass
+Make executable:
+
+chmod +x scripts/test_client.py
+Task 3: Create Management Automation
+Step 3.1: Implement C2 Manager (Starter Template)
+Create scripts/c2_manager.py:
+
+#!/usr/bin/env python3
+"""
+C2 Infrastructure Manager - Student Implementation
+"""
+
+import subprocess
+import time
+import os
+import signal
+import sys
+import requests
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+class C2Manager:
+    def __init__(self):
+        self.base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.processes = {}
+        
+    def start_caddy(self):
+        """
+        Start Caddy web server with configuration
+        
+        Returns:
+            Boolean indicating success
+        """
+        print("[+] Starting Caddy web server...")
+        
+        # TODO: Stop any existing Caddy processes
+        # TODO: Start Caddy with config/Caddyfile
+        # TODO: Verify Caddy started successfully
+        # TODO: Return True on success, False on failure
+        pass
+        
+    def start_listener(self):
+        """
+        Start the encrypted C2 listener
+        
+        Returns:
+            Boolean indicating success
+        """
+        print("[+] Starting encrypted C2 listener...")
+        
+        # TODO: Start encrypted_listener.py as subprocess
+        # TODO: Store process in self.processes['listener']
+        # TODO: Wait 3 seconds and check if still running
+        # TODO: Return success status
+        pass
+        
+    def test_https_tunnel(self):
+        """Test HTTPS tunnel endpoints"""
+        print("[+] Testing HTTPS tunnel...")
+        
+        endpoints = ['https://localhost:8443', 'https://c2.local:8443']
+        
+        # TODO: Loop through endpoints
+        # TODO: Make HTTPS request with verify=False
+        # TODO: Print status code and security headers
+        # TODO: Handle connection errors gracefully
+        pass
+        
+    def check_status(self):
+        """Check status of all components"""
+        print("\n[+] Checking component status...")
+        
+        # TODO: Check if Caddy process is running (pgrep)
+        # TODO: Check if listener process is running
+        # TODO: Check if ports 8080 and 8443 are listening (netstat)
+        # TODO: Print status for each component
+        pass
+        
+    def stop_all(self):
+        """Stop all components gracefully"""
+        print("\n[+] Stopping all components...")
+        
+        # TODO: Terminate listener process
+        # TODO: Stop Caddy using 'caddy stop'
+        # TODO: Force kill if graceful shutdown fails
+        pass
+        
+    def full_deployment(self):
+        """Deploy complete C2 infrastructure"""
+        print("="*60)
+        print("C2 Infrastructure Deployment")
+        print("="*60)
+        
+        # TODO: Start Caddy
+        # TODO: Start listener
+        # TODO: Wait 5 seconds
+        # TODO: Test HTTPS tunnel
+        # TODO: Check status
+        # TODO: Print access information
+        pass
+
+def signal_handler(sig, frame):
+    """Handle Ctrl+C gracefully"""
+    # TODO: Stop all services
+    # TODO: Exit cleanly
+    pass
+
+def main():
+    # TODO: Create C2Manager instance
+    # TODO: Set up signal handler
+    # TODO: Parse command line arguments (start/stop/status/test)
+    # TODO: Execute appropriate command
+    pass
+
+if __name__ == "__main__":
+    main()
+Make executable:
+
+chmod +x scripts/c2_manager.py
+Step 3.2: Create Validation Script (Starter Template)
+Create scripts/validate_config.py:
+
+#!/usr/bin/env python3
+"""
+Configuration Validator - Student Implementation
+"""
+
+import os
+import socket
+import subprocess
+from pathlib import Path
+
+class ConfigValidator:
+    def __init__(self):
+        self.base_dir = Path(__file__).parent.parent
+        self.errors = []
+        self.warnings = []
+        
+    def validate_directories(self):
+        """Validate required directories exist"""
+        required_dirs = ['config', 'scripts', 'logs']
+        
+        # TODO: Check each directory exists
+        # TODO: Add errors if missing
+        # TODO: Print success messages
+        pass
+        
+    def validate_caddyfile(self):
+        """Validate Caddyfile syntax"""
+        # TODO: Check if Caddyfile exists
+        # TODO: Run 'caddy validate' command
+        # TODO: Add errors if validation fails
+        pass
+        
+    def validate_python_scripts(self):
+        """Validate Python script syntax"""
+        scripts = ['encrypted_listener.py', 'test_client.py', 'c2_manager.py']
+        
+        # TODO: Check each script exists
+        # TODO: Compile script to check syntax
+        # TODO: Add errors for syntax issues
+        pass
+        
+    def validate_dependencies(self):
+        """Validate Python dependencies"""
+        packages = ['cryptography', 'requests', 'urllib3']
+        
+        # TODO: Try importing each package
+        # TODO: Add errors for missing packages
+        pass
+        
+    def validate_ports(self):
+        """Check if required ports are available"""
+        ports = [8080, 8443]
+        
+        # TODO: Try binding to each port
+        # TODO: Add warnings if ports in use
+        pass
+        
+    def run_validation(self):
+        """Run all validation checks"""
+        # TODO: Call all validation methods
+        # TODO: Print summary of errors and warnings
+        # TODO: Return True if no errors, False otherwise
+        pass
+
+if __name__ == "__main__":
+    # TODO: Create validator and run validation
+    # TODO: Exit with appropriate code
+    pass
+Make executable:
+
+chmod +x scripts/validate_config.py
+Task 4: Testing and Validation
+Step 4.1: Validate Configuration
+cd ~/c2-lab
+
+# Run validation script
+python3 scripts/validate_config.py
+
+# Verify directory structure
+ls -la config/ scripts/ logs/
+Step 4.2: Deploy Infrastructure
+# Start complete infrastructure
+python3 scripts/c2_manager.py start
+
+# The manager will:
+# - Start Caddy on port 8443
+# - Start listener on port 8080
+# - Test HTTPS tunnel
+# - Display status
+Step 4.3: Manual Testing
+Open a new terminal and test endpoints:
+
+# Test HTTPS endpoints
+curl -k https://localhost:8443
+curl -k https://c2.local:8443
+
+# Check listening ports
+netstat -tlnp | grep -E '8080|8443'
+
+# Monitor logs
+tail -f ~/c2-lab/logs/caddy.log
+tail -f ~/c2-lab/logs/listener.log
+Step 4.4: Test Client Communication
+In another terminal:
+
+cd ~/c2-lab
+python3 scripts/test_client.py
+Expected output:
+
+Connection established
+Heartbeat messages received and decrypted
+Client responses sent
+Clean disconnection after 60 seconds
+Step 4.5: Stop Infrastructure
+# Stop all services
+python3 scripts/c2_manager.py stop
+
+# Or use Ctrl+C if running in foreground
+Expected Outcomes
+After completing this lab, you should have:
+
+Functional Caddy reverse proxy with HTTPS on port 8443
+Encrypted C2 listener on port 8080
+Working encryption/decryption between client and server
+Automated deployment and management scripts
+Validated configuration and dependencies
+Understanding of HTTPS tunneling for C2 communications
+Troubleshooting Tips
+Port Already in Use
+
+# Find process using port
+sudo lsof -i :8080
+sudo lsof -i :8443
+
+# Kill process if needed
+sudo kill -9 <PID>
+Caddy Won't Start
+
+# Check Caddyfile syntax
+caddy validate --config config/Caddyfile
+
+# Check Caddy logs
+journalctl -u caddy -n 50
+
+# Manually test Caddy
+caddy run --config config/Caddyfile
+Encryption Errors
+
+Verify both client and server use identical salt values
+Ensure password matches on both sides
+Check cryptography library version: pip3 show cryptography
+Verify PBKDF2 parameters match (iterations, algorithm, key length)
+Connection Refused
+
+Verify listener is running: ps aux | grep encrypted_listener
+Check firewall rules: sudo ufw status
+Ensure correct host/port in client configuration
+Test direct connection: telnet localhost 8080
+SSL Certificate Errors
+
+Use -k flag with curl for self-signed certificates
+Verify Caddy generated internal certificates
+Check certificate location: ~/.local/share/caddy/certificates/
+Conclusion
+This lab demonstrated deploying an encrypted C2 listener with HTTPS tunneling using Caddy as a reverse proxy. You implemented encryption using Python's cryptography library, created automated management scripts, and validated secure communications. This architecture provides a foundation for understanding how modern C2 frameworks hide malicious traffic within legitimate HTTPS connections.
+
+Key takeaways:
+
+HTTPS tunneling obscures C2 traffic as normal web traffic
+Encryption adds defense-in-depth for C2 communications
+Automation scripts simplify deployment and management
+Proper validation prevents configuration errors
+Understanding both client and server components is essential
+In production red team operations, additional considerations include domain fronting, certificate pinning, traffic shaping, and jitter to evade detection.
