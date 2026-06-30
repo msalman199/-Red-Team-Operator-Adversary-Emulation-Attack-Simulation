@@ -1,0 +1,23 @@
+{
+  "targets": [
+    {
+      "name": "target1",
+      "ip": "192.168.100.10",
+      "username": "root",
+      "password": "password123",
+      "role": "jump_host"
+    },
+    {
+      "name": "target2",
+      "ip": "192.168.100.20",
+      "username": "root",
+      "password": "password123",
+      "role": "final_target"
+    }
+  ],
+  "options": {
+    "timeout": 30,
+    "retry_attempts": 3,
+    "log_file": "pivot_results.log"
+  }
+}
