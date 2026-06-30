@@ -1,0 +1,22 @@
+# Common LDAP Queries for AD Enumeration
+
+# Find all users
+(&(objectCategory=person)(objectClass=user))
+
+# Find all groups
+(objectClass=group)
+
+# Find Domain Admins
+(memberOf=CN=Domain Admins,CN=Users,DC=corp,DC=local)
+
+# Find accounts with SPN (Kerberoastable)
+(&(objectCategory=person)(objectClass=user)(servicePrincipalName=*))
+
+# Find accounts without pre-auth (AS-REP Roastable)
+(&(objectCategory=person)(objectClass=user)(userAccountControl:1.2.840.113556.1.4.803:=4194304))
+
+# Find computers
+(objectClass=computer)
+
+# Find privileged groups
+(|(cn=Domain Admins)(cn=Enterprise Admins)(cn=Schema Admins))
