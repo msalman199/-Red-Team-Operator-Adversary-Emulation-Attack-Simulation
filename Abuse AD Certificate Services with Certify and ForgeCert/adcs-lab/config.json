@@ -1,0 +1,21 @@
+{
+  "domain": "vulnerable.local",
+  "dc_host": "dc01.vulnerable.local",
+  "ca_name": "VulnerableCA",
+  "credentials": {
+    "username": "testuser",
+    "password": "Password123!"
+  },
+  "targets": [
+    "administrator",
+    "krbtgt",
+    "domain_admin"
+  ],
+  "output_dir": "./output",
+  "certificate_validity_days": 365,
+  "exploitation_options": {
+    "request_certificates": true,
+    "forge_certificates": true,
+    "test_authentication": true
+  }
+}
