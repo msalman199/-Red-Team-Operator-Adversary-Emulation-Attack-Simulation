@@ -1,0 +1,16 @@
+{
+  "domain": "CORP.LOCAL",
+  "users": [
+    {"name": "Administrator", "sid": "S-1-5-21-1111-2222-3333-500", "groups": ["Domain Admins"]},
+    {"name": "jsmith", "sid": "S-1-5-21-1111-2222-3333-1001", "groups": ["Domain Users"]},
+    {"name": "svc_backup", "sid": "S-1-5-21-1111-2222-3333-1002", "groups": ["Backup Operators"]}
+  ],
+  "groups": [
+    {"name": "Domain Admins", "sid": "S-1-5-21-1111-2222-3333-512"},
+    {"name": "Domain Users", "sid": "S-1-5-21-1111-2222-3333-513"}
+  ],
+  "computers": [
+    {"name": "WS01.corp.local", "os": "Windows 10", "admins": ["jsmith"]},
+    {"name": "SRV01.corp.local", "os": "Windows Server 2019", "admins": ["Administrator"]}
+  ]
+}
