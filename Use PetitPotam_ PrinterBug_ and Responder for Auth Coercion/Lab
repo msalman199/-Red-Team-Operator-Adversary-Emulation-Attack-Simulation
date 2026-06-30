@@ -1,0 +1,537 @@
+Authentication Coercion with PetitPotam, PrinterBug, and Responder
+Objectives
+By the end of this lab, students will be able to:
+
+Understand Windows authentication coercion attack vectors
+Implement PetitPotam (MS-EFSRPC) coercion techniques
+Utilize PrinterBug (MS-RPRN) for forced authentication
+Configure Responder to capture NetNTLMv2 hashes
+Analyze captured authentication data for security assessments
+Prerequisites
+Basic understanding of Windows Active Directory and NTLM authentication
+Familiarity with Python programming
+Knowledge of network protocols (SMB, RPC)
+Linux command-line experience
+Lab Environment Setup
+Ready-to-Use Cloud Machines: Al Nafi provides Ubuntu 22.04 LTS machines with pre-installed tools including Python 3.10+, Impacket toolkit, and Responder framework. Click Start Lab to begin.
+
+Your environment includes:
+
+Penetration testing tools pre-configured
+Simulated network environment for safe testing
+All required Python libraries installed
+Task 1: Understanding Authentication Coercion
+Overview
+Authentication coercion attacks force Windows systems to authenticate to attacker-controlled servers, enabling credential capture and relay attacks. Key protocols exploited:
+
+MS-EFSRPC: Encrypted File System Remote Protocol (PetitPotam)
+MS-RPRN: Print System Remote Protocol (PrinterBug)
+NetNTLM: Challenge-response authentication protocol
+Step 1: Set Up Lab Environment
+Create working directory and verify tools:
+
+mkdir ~/auth-coercion-lab && cd ~/auth-coercion-lab
+
+# Verify installations
+python3 -c "import impacket; print('Impacket:', impacket.__version__)"
+responder -h | head -5
+Step 2: Configure Network Simulation
+Set up loopback aliases for testing:
+
+# Add IP aliases for simulation
+sudo ip addr add 127.0.0.2/8 dev lo
+sudo ip addr add 127.0.0.3/8 dev lo
+
+# Verify configuration
+ip addr show lo | grep "127.0.0"
+Step 3: Create Configuration File
+# lab_config.py
+class LabConfig:
+    '''Configuration for authentication coercion lab'''
+    
+    def __init__(self):
+        self.attacker_ip = "127.0.0.1"
+        self.target_ip = "127.0.0.2"
+        self.domain = "TESTDOMAIN"
+        self.interface = "lo"
+    
+    def display_config(self):
+        '''Display current configuration'''
+        # TODO: Print configuration details
+        pass
+
+if __name__ == "__main__":
+    config = LabConfig()
+    config.display_config()
+Task 2: Implement PetitPotam Attack
+Overview
+PetitPotam exploits MS-EFSRPC to coerce authentication by calling EFS functions with UNC paths pointing to attacker-controlled servers.
+
+Step 1: Create PetitPotam Implementation
+# petitpotam.py
+#!/usr/bin/env python3
+'''
+PetitPotam Authentication Coercion Implementation
+Exploits MS-EFSRPC protocol for forced authentication
+'''
+
+import sys
+import time
+
+class PetitPotam:
+    '''PetitPotam attack implementation'''
+    
+    def __init__(self, target_ip, listener_ip):
+        self.target_ip = target_ip
+        self.listener_ip = listener_ip
+        self.efs_functions = [
+            'EfsRpcOpenFileRaw',
+            'EfsRpcEncryptFileSrv',
+            'EfsRpcDecryptFileSrv'
+        ]
+    
+    def create_unc_path(self):
+        '''
+        Generate UNC path for coercion
+        
+        Returns:
+            str: UNC path pointing to listener
+        '''
+        # TODO: Create UNC path with listener IP
+        # Format: \\\\<listener_ip>\\share\\file.txt
+        pass
+    
+    def simulate_efsrpc_call(self, function_name, unc_path):
+        '''
+        Simulate EFS RPC function call
+        
+        Args:
+            function_name: EFS function to call
+            unc_path: UNC path for coercion
+            
+        Returns:
+            bool: Success status
+        '''
+        # TODO: Simulate RPC connection to target
+        # TODO: Send EFS function call with UNC path
+        # TODO: Return success/failure status
+        pass
+    
+    def execute_attack(self):
+        '''
+        Execute PetitPotam attack sequence
+        '''
+        print(f"[PETITPOTAM] Targeting: {self.target_ip}")
+        print(f"[PETITPOTAM] Listener: {self.listener_ip}")
+        
+        # TODO: Iterate through EFS functions
+        # TODO: Call simulate_efsrpc_call for each function
+        # TODO: Display results
+        pass
+
+def main():
+    if len(sys.argv) != 3:
+        print("Usage: python3 petitpotam.py <target_ip> <listener_ip>")
+        sys.exit(1)
+    
+    # TODO: Parse command-line arguments
+    # TODO: Create PetitPotam instance
+    # TODO: Execute attack
+    pass
+
+if __name__ == "__main__":
+    main()
+Step 2: Test PetitPotam
+# Make executable
+chmod +x petitpotam.py
+
+# Run simulation
+python3 petitpotam.py 127.0.0.2 127.0.0.1
+Step 3: Analyze Attack Flow
+Document the attack sequence:
+
+Attacker connects to target's MS-EFSRPC service
+Calls EFS function with UNC path to attacker server
+Target attempts to authenticate to attacker server
+Responder captures NetNTLMv2 hash
+Task 3: Implement PrinterBug Attack
+Overview
+PrinterBug exploits MS-RPRN (Print Spooler) service using RpcRemoteFindFirstPrinterChangeNotificationEx to force authentication.
+
+Step 1: Create PrinterBug Implementation
+# printerbug.py
+#!/usr/bin/env python3
+'''
+PrinterBug (SpoolSample) Implementation
+Exploits MS-RPRN for authentication coercion
+'''
+
+import sys
+import time
+
+class PrinterBug:
+    '''PrinterBug attack implementation'''
+    
+    def __init__(self, target_ip, listener_ip):
+        self.target_ip = target_ip
+        self.listener_ip = listener_ip
+        self.rprn_port = 445
+    
+    def create_notification_request(self):
+        '''
+        Create printer change notification request
+        
+        Returns:
+            dict: Request parameters
+        '''
+        # TODO: Create request dictionary with:
+        #   - function name
+        #   - printer name (\\\\target\\printer)
+        #   - notification server (\\\\listener\\pipe\\spoolss)
+        #   - change flags
+        pass
+    
+    def simulate_rprn_connection(self):
+        '''
+        Simulate connection to print spooler
+        
+        Returns:
+            bool: Connection status
+        '''
+        # TODO: Simulate RPC connection to target spooler
+        # TODO: Authenticate to service
+        # TODO: Return connection status
+        pass
+    
+    def send_notification_request(self):
+        '''
+        Send printer change notification
+        
+        Returns:
+            bool: Request status
+        '''
+        # TODO: Create notification request
+        # TODO: Send request to target
+        # TODO: Target should authenticate to listener
+        pass
+    
+    def execute_attack(self):
+        '''Execute PrinterBug attack sequence'''
+        print(f"[PRINTERBUG] Target: {self.target_ip}")
+        print(f"[PRINTERBUG] Listener: {self.listener_ip}")
+        
+        # TODO: Connect to print spooler
+        # TODO: Send notification request
+        # TODO: Display results
+        pass
+
+def main():
+    if len(sys.argv) != 3:
+        print("Usage: python3 printerbug.py <target_ip> <listener_ip>")
+        sys.exit(1)
+    
+    # TODO: Parse arguments
+    # TODO: Create PrinterBug instance
+    # TODO: Execute attack
+    pass
+
+if __name__ == "__main__":
+    main()
+Step 2: Test PrinterBug
+chmod +x printerbug.py
+python3 printerbug.py 127.0.0.2 127.0.0.1
+Step 3: Compare Attack Vectors
+Key differences:
+
+Feature	PetitPotam	PrinterBug
+Protocol	MS-EFSRPC	MS-RPRN
+Service	EFS	Print Spooler
+Authentication	Optional	Required
+Patched	CVE-2021-36942	Partially
+Task 4: Configure Responder for Hash Capture
+Overview
+Responder captures NetNTLMv2 hashes by responding to authentication requests from coerced targets.
+
+Step 1: Create Responder Manager
+# responder_manager.py
+#!/usr/bin/env python3
+'''
+Responder Management and Hash Capture Tool
+'''
+
+import subprocess
+import time
+import re
+
+class ResponderManager:
+    '''Manage Responder for hash capture'''
+    
+    def __init__(self, interface='lo'):
+        self.interface = interface
+        self.process = None
+        self.captured_hashes = []
+    
+    def start_responder(self, options=None):
+        '''
+        Start Responder with specified options
+        
+        Args:
+            options: List of Responder command-line options
+            
+        Returns:
+            bool: Success status
+        '''
+        # TODO: Build Responder command with options
+        # TODO: Start subprocess
+        # TODO: Return status
+        pass
+    
+    def monitor_output(self, duration=30):
+        '''
+        Monitor Responder output for hash captures
+        
+        Args:
+            duration: Monitoring duration in seconds
+            
+        Returns:
+            list: Captured hashes
+        '''
+        # TODO: Read Responder output
+        # TODO: Parse for NetNTLMv2 hashes
+        # TODO: Store captured hashes
+        # TODO: Return list of hashes
+        pass
+    
+    def stop_responder(self):
+        '''Stop Responder process'''
+        # TODO: Terminate Responder subprocess
+        # TODO: Wait for graceful shutdown
+        pass
+    
+    def simulate_capture(self):
+        '''
+        Simulate hash capture for demonstration
+        
+        Returns:
+            list: Simulated captured hashes
+        '''
+        # TODO: Generate sample NetNTLMv2 hashes
+        # TODO: Display capture events
+        # TODO: Return simulated hashes
+        pass
+
+def main():
+    print("[RESPONDER] Hash Capture Demonstration")
+    
+    # TODO: Create ResponderManager instance
+    # TODO: Start Responder or run simulation
+    # TODO: Monitor for captures
+    # TODO: Display results
+    pass
+
+if __name__ == "__main__":
+    main()
+Step 2: Create Hash Analysis Tool
+# hash_analyzer.py
+#!/usr/bin/env python3
+'''
+NetNTLMv2 Hash Analysis Tool
+'''
+
+import re
+
+class HashAnalyzer:
+    '''Analyze captured NetNTLMv2 hashes'''
+    
+    def __init__(self):
+        self.hash_pattern = r'([^:]+)::([^:]+):([a-fA-F0-9]{16}):([a-fA-F0-9]{32}):([a-fA-F0-9]+)'
+    
+    def parse_hash(self, hash_string):
+        '''
+        Parse NetNTLMv2 hash components
+        
+        Args:
+            hash_string: NetNTLMv2 hash string
+            
+        Returns:
+            dict: Parsed hash components
+        '''
+        # TODO: Match hash pattern
+        # TODO: Extract username, domain, challenge, response
+        # TODO: Return dictionary with components
+        pass
+    
+    def format_for_hashcat(self, hash_string):
+        '''
+        Format hash for Hashcat cracking
+        
+        Args:
+            hash_string: NetNTLMv2 hash
+            
+        Returns:
+            str: Hashcat-formatted hash
+        '''
+        # TODO: Parse hash components
+        # TODO: Format for Hashcat mode 5600
+        # TODO: Return formatted string
+        pass
+    
+    def analyze_batch(self, hash_file):
+        '''
+        Analyze multiple hashes from file
+        
+        Args:
+            hash_file: Path to file with captured hashes
+            
+        Returns:
+            list: Analysis results
+        '''
+        # TODO: Read hashes from file
+        # TODO: Parse each hash
+        # TODO: Generate statistics
+        # TODO: Return analysis results
+        pass
+
+def main():
+    # TODO: Create HashAnalyzer instance
+    # TODO: Load sample hashes
+    # TODO: Parse and analyze
+    # TODO: Display results
+    pass
+
+if __name__ == "__main__":
+    main()
+Step 3: Test Complete Attack Chain
+# Terminal 1: Start Responder (simulation mode)
+python3 responder_manager.py
+
+# Terminal 2: Execute PetitPotam
+python3 petitpotam.py 127.0.0.2 127.0.0.1
+
+# Terminal 3: Execute PrinterBug
+python3 printerbug.py 127.0.0.2 127.0.0.1
+
+# Analyze captured hashes
+python3 hash_analyzer.py captured_hashes.txt
+Task 5: Implement Defensive Measures
+Step 1: Create Detection Script
+# detect_coercion.py
+#!/usr/bin/env python3
+'''
+Authentication Coercion Detection Tool
+'''
+
+class CoercionDetector:
+    '''Detect authentication coercion attempts'''
+    
+    def __init__(self):
+        self.suspicious_patterns = []
+        self.alerts = []
+    
+    def monitor_rpc_calls(self):
+        '''
+        Monitor for suspicious RPC calls
+        
+        Returns:
+            list: Detected suspicious activities
+        '''
+        # TODO: Monitor MS-EFSRPC calls
+        # TODO: Monitor MS-RPRN calls
+        # TODO: Detect unusual UNC path access
+        # TODO: Return alerts
+        pass
+    
+    def check_spooler_status(self):
+        '''
+        Check Print Spooler service status
+        
+        Returns:
+            dict: Service status information
+        '''
+        # TODO: Query Print Spooler service
+        # TODO: Check if service is running
+        # TODO: Return status
+        pass
+    
+    def recommend_mitigations(self):
+        '''
+        Provide mitigation recommendations
+        
+        Returns:
+            list: Recommended security measures
+        '''
+        # TODO: Generate mitigation list
+        # TODO: Include service hardening steps
+        # TODO: Return recommendations
+        pass
+
+def main():
+    # TODO: Create detector instance
+    # TODO: Run detection checks
+    # TODO: Display findings and recommendations
+    pass
+
+if __name__ == "__main__":
+    main()
+Step 2: Document Mitigation Strategies
+Key defensive measures:
+
+Disable Print Spooler: Stop and disable on non-print servers
+Apply Patches: Install KB5005010 and later updates
+Network Segmentation: Restrict RPC access between systems
+Monitor Authentication: Alert on unusual authentication patterns
+Disable NTLM: Use Kerberos where possible
+Step 3: Test Detection Capabilities
+# Run detection script
+python3 detect_coercion.py
+
+# Check Print Spooler status
+systemctl status cups  # Linux equivalent
+
+# Review recommendations
+python3 detect_coercion.py --recommendations
+Expected Outcomes
+After completing this lab, you should have:
+
+Working implementations of PetitPotam and PrinterBug attacks
+Functional Responder configuration for hash capture
+Hash analysis tools for captured credentials
+Detection scripts for identifying coercion attempts
+Understanding of defensive measures
+Sample output from successful attack:
+
+[PETITPOTAM] Coercion successful
+[RESPONDER] NetNTLMv2 captured: testuser::DOMAIN:challenge:response
+[ANALYZER] Hash formatted for cracking
+[DETECTOR] Suspicious RPC activity detected
+Troubleshooting Tips
+Issue: Responder not capturing hashes
+
+Solution: Verify network interface configuration
+Solution: Check firewall rules allow SMB traffic
+Solution: Ensure target can reach listener IP
+Issue: Permission denied errors
+
+Solution: Run Responder with sudo privileges
+Solution: Verify file permissions on scripts
+Issue: Connection timeouts
+
+Solution: Confirm IP aliases are configured
+Solution: Check services are listening on correct ports
+Solution: Verify no port conflicts exist
+Conclusion
+This lab demonstrated authentication coercion techniques using PetitPotam and PrinterBug to force Windows systems to authenticate to attacker-controlled servers. You learned to capture NetNTLMv2 hashes with Responder and analyze them for security assessments. Understanding these attack vectors is crucial for implementing proper defensive measures including service hardening, patch management, and authentication monitoring.
+
+Key Takeaways:
+
+Authentication coercion exploits legitimate Windows protocols
+Multiple attack vectors exist (MS-EFSRPC, MS-RPRN)
+Captured hashes can be cracked or relayed
+Defense requires layered security controls
+Regular patching and service hardening are essential
+Next Steps:
+
+Practice hash cracking with Hashcat
+Explore NTLM relay attacks
+Implement enterprise-wide mitigations
+Study additional coercion techniques
