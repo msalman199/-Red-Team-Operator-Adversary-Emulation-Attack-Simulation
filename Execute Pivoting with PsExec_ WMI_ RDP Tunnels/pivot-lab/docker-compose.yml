@@ -1,0 +1,29 @@
+version: '3.8'
+services:
+  target1:
+    image: ubuntu:20.04
+    container_name: target1
+    networks:
+      pivot-lab:
+        ipv4_address: 192.168.100.10
+    command: >
+      bash -c "apt update && apt install -y openssh-server &&
+      echo 'root:password123' | chpasswd &&
+      echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config &&
+      service ssh start && tail -f /dev/null"
+  
+  target2:
+    image: ubuntu:20.04
+    container_name: target2
+    networks:
+      pivot-lab:
+        ipv4_address: 192.168.100.20
+    command: >
+      bash -c "apt update && apt install -y openssh-server &&
+      echo 'root:password123' | chpasswd &&
+      echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config &&
+      service ssh start && tail -f /dev/null"
+
+networks:
+  pivot-lab:
+    external: true
