@@ -1,0 +1,519 @@
+Abuse AD Certificate Services with Certify and ForgeCert
+Objectives
+By the end of this lab, students will be able to:
+
+Enumerate Active Directory Certificate Services (ADCS) vulnerabilities using Certify techniques
+Identify misconfigured certificate templates and CA settings
+Forge certificates using compromised CA materials for privilege escalation
+Automate ADCS exploitation workflows with Python
+Implement defensive measures against certificate-based attacks
+Prerequisites
+Basic understanding of Active Directory and PKI concepts
+Familiarity with Linux command line and Python programming
+Knowledge of certificate-based authentication mechanisms
+Understanding of privilege escalation techniques
+Lab Environment
+Your cloud machine includes:
+
+Kali Linux with pre-installed tools
+Python 3 with cryptography libraries
+OpenSSL for certificate operations
+Simulated AD environment for safe testing
+All tools and dependencies are pre-configured. Click Start Lab to begin.
+
+Task 1: Enumerate ADCS Vulnerabilities
+Step 1: Set Up Lab Environment
+# Create workspace
+mkdir -p ~/adcs-lab && cd ~/adcs-lab
+
+# Set environment variables
+export TARGET_DOMAIN="vulnerable.local"
+export TARGET_CA="VulnerableCA"
+export LAB_USER="testuser"
+Step 2: Create ADCS Enumeration Script
+Create certify_enum.py:
+
+#!/usr/bin/env python3
+"""
+ADCS Enumeration Tool
+Simulates Certify functionality for identifying vulnerable certificate templates
+"""
+
+import json
+from datetime import datetime
+
+class ADCSEnumerator:
+    def __init__(self, domain, username, password):
+        self.domain = domain
+        self.username = username
+        self.password = password
+        self.results = {}
+    
+    def enumerate_templates(self):
+        """
+        Enumerate certificate templates and identify vulnerabilities
+        
+        TODO: Implement LDAP queries to retrieve certificate templates
+        TODO: Check template permissions (Enroll, AutoEnroll)
+        TODO: Identify ESC1-ESC8 vulnerability patterns
+        TODO: Return list of vulnerable templates
+        """
+        # Simulated vulnerable templates
+        templates = [
+            {
+                "name": "VulnerableWebServer",
+                "permissions": ["Enroll"],
+                "subject_alt_name": "Enabled",
+                "vulnerability": "ESC1"
+            },
+            {
+                "name": "UserTemplate",
+                "permissions": ["Enroll"],
+                "subject_alt_name": "Disabled",
+                "vulnerability": None
+            }
+        ]
+        
+        # TODO: Filter and categorize templates by vulnerability type
+        pass
+    
+    def check_ca_flags(self):
+        """
+        Check Certificate Authority configuration flags
+        
+        TODO: Query CA for EDITF_ATTRIBUTESUBJECTALTNAME2 flag
+        TODO: Check for other dangerous CA configurations
+        TODO: Return CA vulnerability assessment
+        """
+        pass
+    
+    def generate_report(self):
+        """
+        Generate enumeration report
+        
+        TODO: Compile all findings into structured report
+        TODO: Save results to JSON file
+        TODO: Print summary to console
+        """
+        pass
+
+def main():
+    # TODO: Parse command line arguments
+    # TODO: Initialize enumerator with credentials
+    # TODO: Run enumeration and generate report
+    pass
+
+if __name__ == "__main__":
+    main()
+Step 3: Execute Enumeration
+# Make script executable
+chmod +x certify_enum.py
+
+# Run enumeration (students complete implementation)
+python3 certify_enum.py $TARGET_DOMAIN $LAB_USER "Password123!"
+
+# Review results
+cat enumeration_results.json | python3 -m json.tool
+Step 4: Analyze Vulnerabilities
+Common ADCS vulnerabilities to identify:
+
+ESC1: Subject Alternative Name (SAN) abuse in certificate requests
+ESC2: Any Purpose EKU or No EKU
+ESC3: Certificate Request Agent enrollment
+ESC6: EDITF_ATTRIBUTESUBJECTALTNAME2 flag enabled on CA
+ESC8: NTLM relay to AD CS HTTP endpoints
+Create analyze_vulns.py:
+
+#!/usr/bin/env python3
+"""
+Vulnerability Analysis Tool
+Analyzes enumeration results and prioritizes exploitation paths
+"""
+
+def analyze_esc1(template):
+    """
+    Analyze ESC1 vulnerability
+    
+    TODO: Check if template allows SAN specification
+    TODO: Verify enrollment permissions
+    TODO: Assess exploitability
+    """
+    pass
+
+def analyze_esc6(ca_info):
+    """
+    Analyze ESC6 vulnerability
+    
+    TODO: Check for EDITF_ATTRIBUTESUBJECTALTNAME2 flag
+    TODO: Determine impact on certificate requests
+    """
+    pass
+
+def prioritize_targets(vulnerabilities):
+    """
+    Prioritize exploitation targets
+    
+    TODO: Rank vulnerabilities by severity and ease of exploitation
+    TODO: Generate exploitation recommendations
+    """
+    pass
+
+# TODO: Implement main analysis logic
+Task 2: Forge Certificates for Privilege Escalation
+Step 1: Generate CA Materials
+# Create certificate directory
+mkdir -p ~/adcs-lab/certificates && cd ~/adcs-lab/certificates
+
+# Generate CA private key
+openssl genrsa -out ca-key.pem 2048
+
+# Create self-signed CA certificate
+openssl req -new -x509 -key ca-key.pem -out ca-cert.pem -days 365 \
+  -subj "/CN=VulnerableCA/O=VulnerableOrg/C=US"
+
+# Verify CA certificate
+openssl x509 -in ca-cert.pem -text -noout | head -15
+Step 2: Create Certificate Forging Tool
+Create forgecert.py:
+
+#!/usr/bin/env python3
+"""
+ForgeCert Implementation
+Forges certificates using compromised CA materials
+"""
+
+from cryptography import x509
+from cryptography.x509.oid import NameOID, ExtendedKeyUsageOID
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from datetime import datetime, timedelta
+
+class CertificateForger:
+    def __init__(self, ca_key_path, ca_cert_path):
+        self.ca_key_path = ca_key_path
+        self.ca_cert_path = ca_cert_path
+        self.ca_key = None
+        self.ca_cert = None
+    
+    def load_ca_materials(self):
+        """
+        Load CA private key and certificate
+        
+        TODO: Read CA key from file
+        TODO: Read CA certificate from file
+        TODO: Handle errors appropriately
+        """
+        pass
+    
+    def forge_certificate(self, target_user, domain, upn=None):
+        """
+        Forge certificate for target user
+        
+        Args:
+            target_user: Username to impersonate
+            domain: Target domain
+            upn: User Principal Name (optional)
+        
+        TODO: Generate new private key for certificate
+        TODO: Create certificate subject with target user
+        TODO: Add Subject Alternative Name with UPN
+        TODO: Add Extended Key Usage for client authentication
+        TODO: Sign certificate with CA private key
+        TODO: Return certificate and private key
+        """
+        pass
+    
+    def create_pfx(self, cert, key, output_path, password=""):
+        """
+        Create PFX bundle for Windows authentication
+        
+        TODO: Combine certificate and private key
+        TODO: Export as PKCS#12 format
+        TODO: Protect with password
+        """
+        pass
+    
+    def verify_certificate(self, cert_path):
+        """
+        Verify forged certificate properties
+        
+        TODO: Load certificate from file
+        TODO: Check subject, issuer, and validity
+        TODO: Verify SAN and EKU extensions
+        """
+        pass
+
+def main():
+    # TODO: Parse arguments (target user, domain, output path)
+    # TODO: Initialize forger with CA materials
+    # TODO: Forge certificate and create PFX
+    # TODO: Save outputs and display summary
+    pass
+
+if __name__ == "__main__":
+    main()
+Step 3: Forge Administrator Certificate
+# Create output directory
+mkdir -p ~/adcs-lab/forged
+
+# Students implement and run forgecert.py
+python3 forgecert.py administrator vulnerable.local ./forged
+
+# Verify forged certificate
+openssl x509 -in forged/administrator.pem -text -noout
+
+# Check certificate details
+openssl x509 -in forged/administrator.pem -noout -subject -issuer -dates
+Step 4: Test Certificate Authentication
+Create test_auth.py:
+
+#!/usr/bin/env python3
+"""
+Certificate Authentication Tester
+Tests forged certificates against authentication endpoints
+"""
+
+import ssl
+import socket
+
+class CertAuthTester:
+    def __init__(self, cert_path, key_path):
+        self.cert_path = cert_path
+        self.key_path = key_path
+    
+    def test_ldaps_auth(self, dc_host, dc_port=636):
+        """
+        Test certificate authentication via LDAPS
+        
+        TODO: Create SSL context with client certificate
+        TODO: Connect to domain controller LDAPS port
+        TODO: Verify authentication success
+        """
+        pass
+    
+    def test_kerberos_pkinit(self, domain, dc_host):
+        """
+        Test PKINIT authentication for Kerberos TGT
+        
+        TODO: Use certificate for PKINIT authentication
+        TODO: Request TGT using forged certificate
+        TODO: Verify ticket acquisition
+        """
+        pass
+    
+    def simulate_privilege_escalation(self):
+        """
+        Simulate privilege escalation workflow
+        
+        TODO: Authenticate as privileged user
+        TODO: Demonstrate access to sensitive resources
+        TODO: Show potential for DCSync or other attacks
+        """
+        pass
+
+# TODO: Implement test execution logic
+Task 3: Automate ADCS Exploitation
+Step 1: Create Automation Framework
+Create adcs_automation.py:
+
+#!/usr/bin/env python3
+"""
+ADCS Exploitation Automation Framework
+Combines enumeration, exploitation, and post-exploitation
+"""
+
+import json
+import os
+from datetime import datetime
+
+class ADCSExploitationFramework:
+    def __init__(self, config_file):
+        self.config = self.load_config(config_file)
+        self.results = {
+            "timestamp": datetime.now().isoformat(),
+            "enumeration": {},
+            "exploitation": {},
+            "certificates": []
+        }
+    
+    def load_config(self, config_file):
+        """
+        Load configuration from JSON file
+        
+        TODO: Read configuration file
+        TODO: Validate required parameters
+        TODO: Set defaults for optional parameters
+        """
+        pass
+    
+    def run_enumeration(self):
+        """
+        Execute automated enumeration
+        
+        TODO: Call certify_enum functions
+        TODO: Store results in self.results
+        TODO: Identify exploitable vulnerabilities
+        """
+        pass
+    
+    def exploit_vulnerabilities(self):
+        """
+        Automatically exploit identified vulnerabilities
+        
+        TODO: Prioritize targets based on enumeration
+        TODO: Request or forge certificates as appropriate
+        TODO: Handle multiple exploitation paths
+        """
+        pass
+    
+    def forge_certificates_batch(self, targets):
+        """
+        Forge certificates for multiple targets
+        
+        TODO: Iterate through target list
+        TODO: Forge certificate for each target
+        TODO: Save certificates and track results
+        """
+        pass
+    
+    def generate_report(self):
+        """
+        Generate comprehensive exploitation report
+        
+        TODO: Compile all results into report
+        TODO: Include recommendations and IOCs
+        TODO: Export to JSON and HTML formats
+        """
+        pass
+    
+    def cleanup(self):
+        """
+        Clean up artifacts and restore state
+        
+        TODO: Remove temporary files
+        TODO: Clear sensitive data from memory
+        """
+        pass
+
+def main():
+    # TODO: Parse command line arguments
+    # TODO: Initialize framework with config
+    # TODO: Execute full exploitation workflow
+    # TODO: Generate and save report
+    pass
+
+if __name__ == "__main__":
+    main()
+Step 2: Create Configuration File
+Create config.json:
+
+{
+  "domain": "vulnerable.local",
+  "dc_host": "dc01.vulnerable.local",
+  "ca_name": "VulnerableCA",
+  "credentials": {
+    "username": "testuser",
+    "password": "Password123!"
+  },
+  "targets": [
+    "administrator",
+    "krbtgt",
+    "domain_admin"
+  ],
+  "output_dir": "./output",
+  "certificate_validity_days": 365,
+  "exploitation_options": {
+    "request_certificates": true,
+    "forge_certificates": true,
+    "test_authentication": true
+  }
+}
+Step 3: Execute Automated Exploitation
+# Run automation framework
+python3 adcs_automation.py --config config.json
+
+# Review generated report
+cat output/exploitation_report.json | python3 -m json.tool
+
+# Check forged certificates
+ls -la output/certificates/
+Step 4: Post-Exploitation Activities
+Create post_exploit.py:
+
+#!/usr/bin/env python3
+"""
+Post-Exploitation Module
+Demonstrates privilege escalation and persistence using forged certificates
+"""
+
+def perform_dcsync(cert_path, key_path, domain, dc_host):
+    """
+    Perform DCSync attack using forged certificate
+    
+    TODO: Authenticate using certificate
+    TODO: Request replication of password hashes
+    TODO: Save extracted credentials
+    """
+    pass
+
+def create_golden_ticket(krbtgt_hash, domain):
+    """
+    Create golden ticket using extracted KRBTGT hash
+    
+    TODO: Use KRBTGT hash to forge TGT
+    TODO: Set arbitrary privileges
+    TODO: Save ticket for persistence
+    """
+    pass
+
+def establish_persistence(cert_path, key_path):
+    """
+    Establish persistence using certificate
+    
+    TODO: Install certificate in trusted store
+    TODO: Configure automatic authentication
+    TODO: Create scheduled tasks or services
+    """
+    pass
+
+# TODO: Implement post-exploitation workflow
+Expected Outcomes
+After completing this lab, students should have:
+
+Functional ADCS enumeration tool identifying vulnerable templates
+Working certificate forging implementation using compromised CA materials
+Automated exploitation framework for ADCS attacks
+Understanding of certificate-based privilege escalation techniques
+Knowledge of defensive measures and detection strategies
+Troubleshooting Tips
+Issue: Certificate validation fails during authentication
+
+Solution: Verify certificate includes correct SAN with UPN format
+Check Extended Key Usage includes Client Authentication OID
+Ensure certificate is signed by trusted CA
+Issue: Enumeration script returns no results
+
+Solution: Verify LDAP connectivity to domain controller
+Check user permissions for reading certificate template objects
+Confirm correct domain and credential parameters
+Issue: PFX creation fails with OpenSSL errors
+
+Solution: Ensure certificate and key files are in correct PEM format
+Verify CA certificate is included in PFX bundle
+Check file permissions and paths
+Conclusion
+This lab demonstrated Active Directory Certificate Services exploitation techniques using Certify and ForgeCert methodologies. Students learned to enumerate ADCS vulnerabilities, forge certificates for privilege escalation, and automate exploitation workflows. Understanding these attacks is critical for both offensive security assessments and defensive hardening of AD environments.
+
+Key Takeaways:
+
+ADCS misconfigurations can lead to complete domain compromise
+Certificate forgery enables persistent, stealthy privilege escalation
+Proper CA security and template configuration are essential
+Regular audits of certificate templates and CA settings prevent exploitation
+Defensive Recommendations:
+
+Disable EDITF_ATTRIBUTESUBJECTALTNAME2 flag on CAs
+Restrict certificate template enrollment permissions
+Implement certificate transparency and monitoring
+Require manager approval for sensitive certificate templates
+Regularly audit certificate issuance logs
